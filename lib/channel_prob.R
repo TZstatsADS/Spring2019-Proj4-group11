@@ -1,5 +1,19 @@
+readfile <- function(file_name){
+  readLines(paste("../data/ground_truth/",file_name,sep=""), warn=FALSE)
+}
 
+#read the ground truth text
+ground_truth_text <- lapply(file_name_vec, readfile)
 
+set.seed(0)
+#sample the training set consists of 80 files weighted by group
+df <- data.frame(file_index = 1:100, group = c(rep(1, 10), rep(2, 28), rep(3, 3), rep(4, 27), rep(5, 32)))
+sample <- sample_n(df, size = 80, weight = group, replace = F)
+#index of trainning set
+train_index <- sort(sample$file_index)
+
+#select train ground truth
+train_truth_text <- unlist(ground_truth_text[train_index])
 
 
 #split the text into single character
