@@ -113,7 +113,7 @@ Here we followed the paper and implemented the rule-based methodology.
 source("../lib/finding_mismatch.R")
 source("../lib/detect.R")
 
-# load initialze variables
+# creating initial variables
 total_ground_truth <- list()
 total_tesseract <- list()
 total_mismatch <- list()
@@ -127,7 +127,7 @@ len_check2 = rep(NA, 100)
 
 file_name <- list.files("../data/ground_truth")
 
-# for corrections
+# trimming files
 for (i in 1:length(file_name)){
  original_file <- sub(".txt","",file_name[i])
  ## read the ground truth text
@@ -138,6 +138,7 @@ for (i in 1:length(file_name)){
  len_check2[i] = length(original_ground_truth) >= length(original_tesseract)
 }
 
+#check which file length is not matching 
 which(!len_check) 
 which(!len_check2)
 length(file_name)-sum(len_check)
@@ -151,13 +152,13 @@ for (k in 1:length(ground_filename)){
   ## read the tesseract text
   current_tesseract <- readLines(paste("../data/tesseract/",current_file,".txt",sep=""), warn=FALSE)
   
-  ## Remove punctuations & remove leading and trailing zeros
+  ## Trim punctuations and zeros
   current_ground_truth <- gsub('[[:punct:]]+','',current_ground_truth)
   current_ground_truth <- trimws(current_ground_truth, which = "both")
   current_tesseract <- gsub('[[:punct:]]+','',current_tesseract)
   current_tesseract <- trimws(current_tesseract, which = "both")
   
-  ## Record mismatching lines
+  ## Find mismatching lines
   mismatch_info <- finding_mismatch(tess = current_tesseract, grdth = current_ground_truth)
   
   ## Save into List
@@ -177,10 +178,10 @@ for (k in 1:length(ground_filename)){
     total_mismatch_100[k,1] <- length(total_tesseract[[k]])
     total_mismatch_100[k,2] <- length(total_ground_truth[[k]])
   }
-  ## All articles match now
+  ## Ensuring that all files match now
   sum(total_mismatch_100[,1]==total_mismatch_100[,2]) == 100
   
-  ## Code to locate the index of the corresponding ground truth text
+  ## Locating index of ground truth text
   ## 1. if the number of words in corresponding row (between tesseract and ground_truth) are equal,
   ## locate the ground truth word by indexing directly
   ## 2. if the number of words in corresponding row are not equal, extract previous and following 2 
@@ -200,7 +201,7 @@ for (k in 1:length(ground_filename)){
 
 #save(total_tesseract, file="../output/total_tesseract.RData")
 #save(total_ground_truth, file="../output/total_ground_truth.RData")
-#save(final_detect_output, file="../output/final_detect_output.RData")
+#save(, file="../output/final_detect_output.RData")
 #save(final_tesseract_clean_output, file="../output/final_tesseract_clean_output.RData")
   
 ```
@@ -472,7 +473,7 @@ ele_prec_char <- length(vecsets::vintersect(correction_char, ground_char))/ leng
 
 - Word level: The precision and recall of the original Tessearct OCR outputs are 61.51105% and 0.6042648%. With post-processing, both precision and recall increased around 3%. Adopting the idea of garbage detection and probability scoring without contextual constraints can somewhat improve the Tesseract OCR output in terms of correcting words.
 
-- Character level: All lowercase and uppercase letters are considered. The original Tessearct OCR outputs has precision 90.39345% and recall 91.00901%. After post-processing, the results are quite similar to the original ones, with the precision score and the recall both increasing around 0.6%.
+- Character level: All lowercase and uppercase letters are considered. The original Tessearct OCR outputs has precision 90.39345% and recall 91.90134%. After post-processing, the results are quite similar to the original ones, with the precision score and the recall both increasing around 0.08%.
 
 ```{r}
 OCR_performance_table <- data.frame("Tesseract" = rep(NA,4),
