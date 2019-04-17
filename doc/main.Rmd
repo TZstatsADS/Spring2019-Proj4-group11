@@ -251,7 +251,7 @@ candidate_dict<- unique(tolower(english.words))
 
 # show candidates chosen for the typo: "acress" 
 acress_candidate <- choose_candidate("acress")
-acress_candidate
+sapply(acress_candidate, type_of_typo, "acress")
 ```
 
 ## Step 4.3 - Test the functions built for probability scoring

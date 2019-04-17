@@ -2,7 +2,8 @@ type_of_typo <- function(typo, candidate_chosen){
   distance <- adist(tolower(typo), candidate_chosen, counts = TRUE)
   #classify the type of typo
   typo_type = NA
-  if (distance == 1){
+ 
+  if (distance > 0){
   # deletion
   if (attr(distance, "counts")[,,'ins'] == 1 & distance != 2){
   typo_type = "DEL"
