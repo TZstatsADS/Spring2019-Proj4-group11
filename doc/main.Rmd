@@ -381,7 +381,7 @@ head(df)
 
 We find that most of the typos in OCR are substitution, the most common case is that scanning "i" as "l".
 
-# Step 5 - Performance measure
+# Step 5  - Performance measure
 
 The two most common OCR accuracy measures are precision and recall. Both are relative measures of the OCR accuracy because they are computed as ratios of the correct output to the total output (precision) or input (recall). More formally defined,
 \begin{align*}
@@ -393,7 +393,7 @@ where *items* refer to either characters or words, and ground truth is the origi
 Both *precision* and *recall* are mathematically convenient measures because their numeric values are some decimal fractions in the range between 0.0 and 1.0, and thus can be written as percentages. For instance, recall is the percentage of words in the original text correctly found by the OCR engine, whereas precision is the percentage of correctly found words with respect to the total word count of the OCR output. Note that in the OCR-related literature, the term OCR accuracy often refers to recall.
 
 
-## Step 5.1 - Perform Evaluation
+## 5.1 - Perform Evaluation
 Finally, we evaluate the performance the algorithms by comparing the word-level and character-level precision and recall. For the number of correct items in the precision and recall functions. We used the following method to calculate: we combine the cleaned words and the corrected words and took the intersection with the ground truth. For character-wise: We split the OCR, corrected list and ground truth into characters, and calculated the intersection between the characters in corrected list and those in ground truth.
 ```{r}
 #ground truth txt file without punctutations in the test group
@@ -469,7 +469,7 @@ ele_recall_char <- length(vecsets::vintersect(correction_char, ground_char))/ le
 ele_prec_char <- length(vecsets::vintersect(correction_char, ground_char))/ length(tes_char)
 ```
 
-## Step 5.2 - Evaluation output
+## 5.2 - Evaluation output
 
 - Word level: The precision and recall of the original Tessearct OCR outputs are 61.51105% and 0.6042648%. With post-processing, both precision and recall increased around 3%. Adopting the idea of garbage detection and probability scoring without contextual constraints can somewhat improve the Tesseract OCR output in terms of correcting words.
 
@@ -492,7 +492,7 @@ OCR_performance_table$Tesseract_with_postprocessing[4] <- ele_prec_char
 kable(OCR_performance_table, caption="Summary of OCR performance")
 ```
 
-## Step 5.3 - Reflection
+## 5.3 Reflection
 ```{r}
 for (i in 1:20){
 df <- rbind(df, data.frame(typo = test_group[[20]]$tesseract_err, typo_type = typo_type_list[[20]], correction = corrected_list[[20]], ground_truth = test_group[[20]]$ground_truth_err) %>% filter(typo_type %in% c("DEL","INS","SUB","REV")))
@@ -504,7 +504,7 @@ df%>% group_by(typo_type) %>% summarise(total_count = n())
 df%>% group_by(typo_type) %>% summarise(success_rate = mean(success))
 ```
 
-We find that probability scoring method in paper C3 mainly deals with spelling error, however OCR leads to scanning error. Those two types of errors are internally different. This is the reason why most of our corrections are substitue a charactor with another. The accuracy of substitution is 98%.
+We find that probability scoring method in paper C3 mainly deals with spelling error, however OCR leads to scanning error. Those two types of errors are internally different. This is the reason why most of our corrections are substitue a charactor with another. The accuracy of substitution is 71.4%.
 
 # References {-}
 
