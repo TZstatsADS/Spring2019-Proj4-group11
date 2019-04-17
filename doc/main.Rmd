@@ -347,17 +347,22 @@ for (i in 1:length(test_group)) {
 
 # perform correction on typo words
 corrected_list <- rep(list(c()),20)
+typo_type_list <- rep(list(c()),20)
 for(i in 1:20) {
     current_file <- tolower(typo_list[[i]])
     correction <- c()
+    typo_type <- c()
     for (j in current_file){
       if (grepl("[[:digit:]]",j) | grepl("^[a-zA-Z]$", j) | grepl("ﬂu", j)){
         correction <- c(correction, j)
+        typo_type <- c(typo_type, NA)
       }
       else{
-        correction <- c(correction, perform_correction(j))
+        correction <- c(correction, perform_correction(j)$correction)
+        typo_type <- c(typo_type, perform_correction(j)$type)
       }
       corrected_list[[i]] = correction
+      typo_type_list[[i]] = typo_type
      }
 }
 
@@ -367,8 +372,13 @@ combine_list <- rep(list(c()), 20)
 for(i in 1:20){
   combine_list[[i]] <- tolower(c(test_group_clean[[i]], corrected_list[[i]]))
 }
+
+#show some result
+df <- data.frame(typo = test_group[[20]]$tesseract_err, typo_type = typo_type_list[[20]], correction = corrected_list[[20]], ground_truth = test_group[[20]]$ground_truth_err) %>% filter(typo_type %in% c("DEL","INS","SUB","REV"))
+head(df)
 ```
 
+We find that most of the typos in OCR are substitution, the most common case is that scanning "i" as "l".
 
 # Step 5  - Performance measure
 
@@ -481,8 +491,18 @@ kable(OCR_performance_table, caption="Summary of OCR performance")
 ```
 
 ## 5.3 Reflection
+```{r}
+for (i in 1:20){
+df <- rbind(df, data.frame(typo = test_group[[20]]$tesseract_err, typo_type = typo_type_list[[20]], correction = corrected_list[[20]], ground_truth = test_group[[20]]$ground_truth_err) %>% filter(typo_type %in% c("DEL","INS","SUB","REV")))
+}
 
 
+df$success = ifelse(as.vector(df$correction) == as.vector(df$ground_truth), 1, 0)
+df%>% group_by(typo_type) %>% summarise(total_count = n())
+df%>% group_by(typo_type) %>% summarise(success_rate = mean(success))
+```
+
+We find that probability scoring method in paper C3 mainly deals with spelling error, however OCR leads to scanning error. Those two types of errors are internally different. This is the reason why most of our corrections are substitue a charactor with another. The accuracy of substitution is 98%.
 
 # References {-}
 
@@ -502,4 +522,4 @@ kable(OCR_performance_table, caption="Summary of OCR performance")
 (This paper is the source of our evaluation criterion)
 
 5. Kukich, K. (1992). *Techniques for automatically correcting words in text*. Acm Computing Surveys (CSUR), 24(4), 377-439. [pdf](http://www.unige.ch/eti/ptt/docs/kukich-92.pdf)
-(This paper is the benchmark review paper)
+(This paper is the benchmark review paper).
