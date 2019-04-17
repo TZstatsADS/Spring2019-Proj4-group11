@@ -30,7 +30,15 @@ Finally, we evaluate the performance the algorithms by comparing the word-level 
 We split the OCR, corrected list and ground truth into characters, and calculated the intersection between the characters in corrected list and those in ground truth. 
 
 
-**Contribution statement**: ([default](doc/a_note_on_contributions.md)) 
+**Contribution statement**: ([default](doc/a_note_on_contributions.md))
+ 
+_Liu, Siwei sl4224_
+* Implemented the rest five algorithms for the error detection (besides the three provided in the starter code)
+* Partook the error detection and evaluation part
+* Formed the discussion group, organized the structure of the project and wrote the summary and project description in the readme file
+* Added comments in the main file and files in the lib folder to increase readability
+* Created Power Point slide and presented the project in class
+
 
  All team members approve our work presented in this GitHub repository including this contributions statement. 
 
