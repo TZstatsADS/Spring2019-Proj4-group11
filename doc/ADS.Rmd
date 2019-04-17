@@ -1,0 +1,128 @@
+# Step 1 - Load library and source code
+```{r, warning=FALSE, message = FALSE}
+if (!require("devtools")) install.packages("devtools")
+if (!require("stringdist")) install.packages("stringdist")
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("gbm")) install.packages("gbm")
+if (!require("ada")) install.packages("ada")
+if (!require("ebmc")) install.packages("ebmc")
+if (!require("data.table")) install.packages("data.table")
+if (!require("pacman")) {
+  ## devtools is required
+  library(devtools)
+  install_github("trinker/pacman")
+}
+library(stringdist)
+library(stringr)
+library(dplyr)
+library(gbm)
+library(ada)
+library(ebmc)
+library(data.table)
+pacman::p_load(knitr, readr, stringr, tesseract, vecsets)
+source('../lib/ifCleanToken.R')
+ground_filename <- list.files("../data/ground_truth_trimmed") #100 files in total
+```
+
+
+# Step 3 - Error detection
+
+Now, we are ready to conduct post-processing, based on the Tessearct OCR output. First of all, we need to detect errors, or *incorrectly processed words* -- check to see if an input string is a valid dictionary word or if its n-grams are all legal.
+
+Paper: C2
+
+Here we followed the paper and implemented the rule-based methodology.
+```{r, warning=FALSE, message = FALSE}
+rerun_data = F
+source("../lib/finding_mismatch.R")
+source("../lib/detect.R")
+total_ground_truth <- list()
+total_tesseract <- list()
+total_mismatch <- list()
+detection_output <- list()
+final_detect_output <- list()
+final_tesseract_clean_output <- list()
+total_mismatch_100 <- matrix(NA, nrow = length(ground_filename), ncol = 2)
+
+len_check = rep(NA, 100)
+len_check2 = rep(NA, 100)
+
+file_name <- list.files("../data/ground_truth")
+
+for (i in 1:length(file_name)){
+ original_file <- sub(".txt","",file_name[i])
+ original_ground_truth <- readLines(paste("../data/ground_truth/",original_file,".txt",sep=""), warn=FALSE)
+ original_tesseract <- readLines(paste("../data/tesseract/",original_file,".txt",sep=""), warn=FALSE)
+ len_check[i] = length(original_ground_truth) == length(original_tesseract)
+ len_check2[i] = length(original_ground_truth) >= length(original_tesseract)
+}
+
+which(!len_check) 
+which(!len_check2)
+length(file_name)-sum(len_check)
+```
+
+```{r}
+for (k in 1:length(ground_filename)){
+  current_file <- sub(".txt","",ground_filename[k])
+  ## read the ground truth text
+  current_ground_truth <- readLines(paste("../data/ground_truth_trimmed/",current_file,".txt",sep=""), warn=FALSE)
+  ## read the tesseract text
+  current_tesseract <- readLines(paste("../data/tesseract/",current_file,".txt",sep=""), warn=FALSE)
+  
+  ## Remove punctuations & remove leading and trailing zeros
+  current_ground_truth <- gsub('[[:punct:]]+','',current_ground_truth)
+  current_ground_truth <- trimws(current_ground_truth, which = "both")
+  current_tesseract <- gsub('[[:punct:]]+','',current_tesseract)
+  current_tesseract <- trimws(current_tesseract, which = "both")
+  
+  ## Record mismatching lines
+  mismatch_info <- finding_mismatch(tess = current_tesseract, grdth = current_ground_truth)
+  
+  ## Save into List
+  total_tesseract[[k]] <- current_tesseract
+  total_ground_truth[[k]] <- current_ground_truth
+  total_mismatch[[k]] <- mismatch_info
+}
+
+```
+
+```{r}
+  ################################################
+  ### Please note that we figured there are exactly 13 text files whose total number of lines do not match 
+  ### between their corresponding ground_truth and tesseract files. Therefore, we manually trimmed the
+  ### lines of those ground_truth files
+  ################################################
+  
+  ## Check if there are any mismatches in terms of article's total number of rows
+  for (k in 1:length(ground_filename)){
+    total_mismatch_100[k,1] <- length(total_tesseract[[k]])
+    total_mismatch_100[k,2] <- length(total_ground_truth[[k]])
+  }
+  ## It turns out all articles match now
+  sum(total_mismatch_100[,1]==total_mismatch_100[,2]) == 100
+  ## Code to locate the index of the corresponding ground truth text
+  ## 1. if the number of words in corresponding row (between tesseract and ground_truth) are equal,
+  ## then locate the ground truth word by indexing directly
+  ## 2. if the number of words in corresponding row are not equal, extract previous and following 2 
+  ## words of the error word (total of 5 index), and apply string-distance function (stringdist) 
+  ## to locate the most likely ground truth word.
+  
+  for (k in 1:length(ground_filename)){
+    current_d1_output <- detect(current_tesseract = total_tesseract[[k]],
+                                        current_ground_truth = total_ground_truth[[k]],
+                                        mismatch_info = total_mismatch[[k]])
+    empty_index <- which(current_d1_output[[1]][,1] == "" | current_d1_output[[1]][,2] == "")
+      if(length(empty_index)>0){
+        final_detect_output[[k]] <- current_d1_output[[1]][-empty_index,]
+       }
+    final_tesseract_clean_output[[k]] <- current_d1_output[[2]]
+    #print(k)  ## For debug purpose only
+  }
+  if (rerun_data){
+    save(total_tesseract, file="../output/total_tesseract.RData")
+    save(total_ground_truth, file="../output/total_ground_truth.RData")
+    save(final_detect_output, file="../output/final_detect_output.RData")
+    save(final_tesseract_clean_output, file="../output/final_tesseract_clean_output.RData")
+  }
+```
