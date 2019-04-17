@@ -1,4 +1,4 @@
-d1_detect <- function(current_tesseract_txt, current_ground_truth_txt, mismatch_info) {
+detect <- function(current_tesseract_txt, current_ground_truth_txt, mismatch_info) {
   
   ############################################################################################
   #### this function is to find matching ground truth words for those detected error words ###
@@ -13,11 +13,11 @@ d1_detect <- function(current_tesseract_txt, current_ground_truth_txt, mismatch_
   ground_truth_err <- NULL
   
   for (i in 1:length(current_tesseract_txt)){
-    tesseract_vec_by_line[[i]] <- str_split(current_tesseract_txt[i]," ")[[1]]
+    tesseract_vec_by_line[[i]] <- tolower(str_split(current_tesseract_txt[i]," ")[[1]])
     tesseract_if_clean_by_line[[i]] <- unlist(lapply(tesseract_vec_by_line[[i]],ifCleanToken))
     tesseract_vec <- c(tesseract_vec, tesseract_vec_by_line[[i]])
     tesseract_if_clean <- c(tesseract_if_clean, tesseract_if_clean_by_line[[i]])
-    ground_truth_vec_by_line[[i]] <- str_split(current_ground_truth_txt[i]," ")[[1]]
+    ground_truth_vec_by_line[[i]] <- tostr_split(current_ground_truth_txt[i]," ")[[1]]
     
     ## if the number of words in corresponding row are not equal, 
     ## extract previous and following 2 words of the error word (total of 5 ), 

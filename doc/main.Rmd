@@ -63,10 +63,9 @@ if (!require("pacman")) {
   install_github("trinker/pacman")
 }
 
+# install packages
 packages.used <- c("devtools","dplyr","vwr", "utils")
-# check packages that need to be installed.
 packages.needed <- setdiff(packages.used, intersect(installed.packages()[,1], packages.used))
-# install additional packages
 if(length(packages.needed)>0) {
   install.packages(packages.needed, dependencies = TRUE)
   }
@@ -77,12 +76,6 @@ library(utils)
 pacman::p_load(knitr, readr, stringr, tesseract, vecsets)
 
 
-
-source('../lib/candidate.R')
-source('../lib/prior.R')
-source('../lib/channel_prob.R')
-source('../lib/score.R')
-source('../lib/perform_correction.R')
 
 file_name_vec <- list.files("../data/ground_truth") #100 files in total
 
@@ -128,7 +121,7 @@ The referenced papers are:
 
 In this statercode, we implement the first three rules in the first paper -- rule based techniques, as an example.
 
-```{r}
+```{r, eval = F}
 ### only process one of the files in the folder as an example, in your project, you need to use all the files
 current_file_name <- sub(".txt","",file_name_vec[5])
 
@@ -166,7 +159,7 @@ The referenced papers are:
 
 5. [Topic models](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=4377099)
 
-##train test split
+## 4.1 train test split
 ```{r}
 readfile <- function(file_name){
   readLines(paste("../data/ground_truth/",file_name,sep=""), warn=FALSE)
@@ -179,10 +172,21 @@ set.seed(0)
 #sample the training set consists of 80 files weighted by group
 df <- data.frame(file_index = 1:100, group = c(rep(1, 10), rep(2, 28), rep(3, 3), rep(4, 27), rep(5, 32)))
 sample <- sample_n(df, size = 80, weight = group, replace = F)
+#index of trainning set
 train_index <- sort(sample$file_index)
 
 #select train ground truth
 train_truth_text <- unlist(ground_truth_text[train_index])
+train_truth_text_vec <- unlist(str_split(train_truth_text, " "))
+```
+
+## 4.2 Choose candiates
+```{r}
+source('../lib/candidate.R')
+source('../lib/prior.R')
+source('../lib/channel_prob.R')
+source('../lib/score.R')
+source('../lib/perform_correction.R')
 ```
 
 ```{r}
@@ -194,37 +198,43 @@ acress_candidate <- choose_candidate("acress")
 acress_candidate
 ```
 
-## Test the functions built for probability scoring
+## 4.3 Test the functions built for probability scoring
 
-The probability scoring $Pr(c) Pr(t|c) Pr(l|c) Pr(r|c)$ utilizes three types of information sources: 
+The probability scoring $score = Pr(c) Pr(typo|cor)$ 
 
 * Prior probability $Pr(c)$:
 
-    + Sparse data problems: a proposed correction might not have appeared in the training set.
-    + Measure: ELE estimation method $Pr(c)=(freq(c) + 0.5)/(N + V/2)$ assigns non-zero probabilities in the case of zero frequency, where 
-    
-        a. $freq(c)$ is the frequency of the proposed correction c in the training corpus
-        b. N is the total number of words
-        c. V is the vocabulary size
+    + frequency is estimated by frequency of words in the training set.
+    + Use ELE estimation: $Pr(c)=(freq(c) + 0.5)/(N + V/2)$ deal with the problem that MLE performs poorly when observed freqency of a word is zero, wherr\e
+        1. $freq(c)$; the frequency of the proposed correction c in the training corpus
+        2. N: the total number of words
+        3. V: the vocabulary size
 
-Example of prior probabilities for "acress" candidates:
 
+### 4.3.1 prior probability
 ```{r}
-priors <- prior_prob(train_truth_text)
+priors <- prior_prob(train_truth_text_vec)
+priors_mle <- prior_prob(train_truth_text, method = "mle")
 
-#calculate the prior probability of the typo "acress" 
-priors[acress_candidate]
+#calculate the prior probability of the typo "acress" using MLE
+sort(unlist(priors_mle[acress_candidate]))
+
+#calculate the prior probability of the typo "acress" using ELE 
+sort(unlist(priors[acress_candidate]))
 ```
 
+We choose to use ELE method, since MLE is poor when observed frequency of a certain word is 0.
 
-* Channel probability $Pr(t|c)$:
+### 4.3.2 channel probability
 
-    + Computed from four confusion matrices (Church and Gale, 1991)
+* Channel probability $Pr(typo|cor)$:
+
+    + four confusion matrices are provided (Church and Gale, 1991):
         a. del[x, y]: the number of times that the characters 'xy' (in the correct word) were typed as 'x'
         b. add[x, y]: the number of times that 'x' was typed as 'xy'
         c. sub[x, y]: the number of times that 'y' was typed as 'x'
         d. rev[x, y]: the number of times that 'xy' was typed as 'yx'
-        e. chars[x, y] and chars[x]: the number of occurence of 'xy' and 'x'
+    + chars[x, y] and chars[x]: the number of time that 'xy' and 'x'appear in the trainning set is calculated
         
         \begin{equation}
         Pr(t|c) =
@@ -236,8 +246,6 @@ priors[acress_candidate]
         \end{cases}       
         \end{equation}
 
-
-Example of channel probabilities for "acress" candidates:
 
 ```{r}
 # load 4 confusion matrices in csv format
@@ -262,14 +270,12 @@ sapply(acress_candidate, channel_prob, "acress")
 
 
 
-## Performing corrections on test files
+## 4.4 Performing corrections on test files
 ```{r detected error correction}
 #load results from error detection part
 load("/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_detect_output.RData")
 load("/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_tesseract_clean_output.RData")
-
 load("/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_ground_truth_txt_100.RData")
-
 load("/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_tesseract_txt_100.RData")
 
 
@@ -308,9 +314,7 @@ for(i in 1:20){
 ```
 
 
-
-
-# Step 5 - Performance measure
+# Step 5  - Performance measure
 
 The two most common OCR accuracy measures are precision and recall. Both are relative measures of the OCR accuracy because they are computed as ratios of the correct output to the total output (precision) or input (recall). More formally defined,
 \begin{align*}
@@ -321,8 +325,8 @@ where *items* refer to either characters or words, and ground truth is the origi
 
 Both *precision* and *recall* are mathematically convenient measures because their numeric values are some decimal fractions in the range between 0.0 and 1.0, and thus can be written as percentages. For instance, recall is the percentage of words in the original text correctly found by the OCR engine, whereas precision is the percentage of correctly found words with respect to the total word count of the OCR output. Note that in the OCR-related literature, the term OCR accuracy often refers to recall.
 
-Here, we only finished the **word level evaluation** criterions, you are required to complete the **character-level** part.
 
+## 5.1 Perform Evaluation
 ```{r}
 #ground truth txt file without punctutations in the test group
 ground_truth_test <- total_ground_truth_txt_100[-train_index]
@@ -332,9 +336,10 @@ OCR_test <- total_tesseract_txt_100[-train_index]
 #split the files into word level
 ground_truth_test_vec <- lapply(ground_truth_test, function(x){tolower(unlist(str_split(x, " ")))})
 OCR_test_vec <- lapply(OCR_test, function(x){tolower(unlist(str_split(x, " ")))})
-
+```
 
 ###wordwise evaluation
+```{r}
 weights_recall <- lengths(ground_truth_test_vec)/sum(lengths(ground_truth_test_vec))
 weights_prec <- lengths(OCR_test_vec)/sum(lengths(OCR_test_vec))
 #wordwise tesseract recall
@@ -359,45 +364,62 @@ tes_precsion <- sum(tes_precsion)
 
 elerecall <- rep(NA, 20)
 for (i in 1:20){
-recall[i] <- (length(vecsets::vintersect(ground_truth_test_vec[[i]], combine_list[[i]]))/length(ground_truth_test_vec[[i]])) * weights_recall[i]
+elerecall[i] <- (length(vecsets::vintersect(ground_truth_test_vec[[i]], combine_list[[i]]))/length(ground_truth_test_vec[[i]])) * weights_recall[i]
 }
 
 
-elerecall <- sum(recall)
+elerecall <- sum(elerecall)
 
 #wordwise precision ele
 
 eleprecision <- rep(NA, 20)
 for (i in 1:20){
-precision[i] <- (length(vecsets::vintersect(ground_truth_test_vec[[i]], combine_list[[i]]))/length(OCR_test_vec[[i]])) * weights_prec[i]
+eleprecision[i] <- (length(vecsets::vintersect(ground_truth_test_vec[[i]], combine_list[[i]]))/length(OCR_test_vec[[i]])) * weights_prec[i]
 }
 
-eleprecision <- sum(precision)
-
-
+eleprecision <- sum(eleprecision)
+```
 
 ###character level evaluation
+```{r}
 # character recall for tesseract
 tes_char <- unlist(str_split(unlist(OCR_test_vec), ""))
 ground_char <- unlist(str_split(unlist(ground_truth_test_vec), ""))
-length(vecsets::vintersect(tes_char, ground_char))/ length(ground_char)
+tes_recall_char <- length(vecsets::vintersect(tes_char, ground_char))/ length(ground_char)
 
 
 # character precision for tesseract
-length(vecsets::vintersect(tes_char, ground_char))/ length(tes_char)
+tes_prec_char <- length(vecsets::vintersect(tes_char, ground_char))/ length(tes_char)
 
 
 # character recall for ele
 correction_char <- unlist(str_split(unlist(combine_list), ""))
-length(vecsets::vintersect(correction_char, ground_char))/ length(ground_char)
+ele_recall_char <- length(vecsets::vintersect(correction_char, ground_char))/ length(ground_char)
 
 
 # character precision for ele
-length(vecsets::vintersect(correction_char, ground_char))/ length(tes_char)
+ele_prec_char <- length(vecsets::vintersect(correction_char, ground_char))/ length(tes_char)
+```
+
+## 5.2  Evaluation output
+```{r}
+OCR_performance_table <- data.frame("Tesseract" = rep(NA,4),
+                                    "Tesseract_with_postprocessing" = rep(NA,4))
+row.names(OCR_performance_table) <- c("word_wise_recall","word_wise_precision",
+                                      "character_wise_recall","character_wise_precision")
+
+OCR_performance_table$Tesseract[1] <- tes_recall
+OCR_performance_table$Tesseract[2] <- tes_precsion
+OCR_performance_table$Tesseract[3] <- tes_recall_char
+OCR_performance_table$Tesseract[4] <- tes_prec_char
+OCR_performance_table$Tesseract_with_postprocessing[1] <- elerecall
+OCR_performance_table$Tesseract_with_postprocessing[2] <- eleprecision
+OCR_performance_table$Tesseract_with_postprocessing[3] <- ele_recall_char
+OCR_performance_table$Tesseract_with_postprocessing[4] <- ele_prec_char
+kable(OCR_performance_table, caption="Summary of OCR performance")
 ```
 
 
-Besides the above required measurement, you are encouraged to explore more evaluation measurements. Here are some related references:
 
 1. Karpinski, R., Lohani, D., & Belaïd, A. *Metrics for Complete Evaluation of OCR Performance*. [pdf](https://csce.ucmss.com/cr/books/2018/LFS/CSREA2018/IPC3481.pdf)
 
