@@ -80,7 +80,7 @@ pacman::p_load(knitr, readr, stringr, tesseract, vecsets)
 
 
 file_name_vec <- list.files("../data/ground_truth") #100 files in total
-ground_filename <- list.files("../data/ground_truth_trimmed") 
+ground_filename <- list.files("../data/ground_truth_cut") 
 ```
 
 # Step 2 - Read the files and conduct Tesseract OCR
@@ -147,7 +147,7 @@ length(file_name)-sum(len_check)
 for (k in 1:length(ground_filename)){
   current_file <- sub(".txt","",ground_filename[k])
   ## read the ground truth text
-  current_ground_truth <- readLines(paste("../data/ground_truth_trimmed/",current_file,".txt",sep=""), warn=FALSE)
+  current_ground_truth <- readLines(paste("../data/ground_truth_cut/",current_file,".txt",sep=""), warn=FALSE)
   ## read the tesseract text
   current_tesseract <- readLines(paste("../data/tesseract/",current_file,".txt",sep=""), warn=FALSE)
   
@@ -470,7 +470,7 @@ ele_prec_char <- length(vecsets::vintersect(correction_char, ground_char))/ leng
 
 ## 5.2 - Evaluation output
 
-- Word level: The precision and recall of the original Tessearct OCR outputs are 61.51105% and 64.57310%. With post-processing, both precision and recall increased around 3%. Adopting the idea of garbage detection and probability scoring without contextual constraints can somewhat improve the Tesseract OCR output in terms of correcting words.
+- Word level: The precision and recall of the original Tessearct OCR outputs are 61.51105% and 0.6042648%. With post-processing, both precision and recall increased around 3%. Adopting the idea of garbage detection and probability scoring without contextual constraints can somewhat improve the Tesseract OCR output in terms of correcting words.
 
 - Character level: All lowercase and uppercase letters are considered. The original Tessearct OCR outputs has precision 90.39345% and recall 91.00901%. After post-processing, the results are quite similar to the original ones, with the precision score and the recall both increasing around 0.6%.
 
