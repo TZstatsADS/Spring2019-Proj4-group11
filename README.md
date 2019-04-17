@@ -39,13 +39,24 @@ _Liu, Siwei sl4224_
 * Added comments in the main file and files in the lib folder to increase readability
 * Created Power Point slide and presented the project in class
 
-_Xia, Mengran mx2205_
+_Vitha, Matthew mv2705_
+* assisted and provided suggestions in testing and evaluation part
+* attended all group meeting
+
+_Wang, Yujie yw3285_ (group leader)
+* Error Correction (Part 4): Built and implemented functions for candidate nomination, prior probability calculation, channel probability calculation, candidate score calculation. Compute denominator (char_x and char_xy) for channel probability from data in the trainning set. 
+* Testing: Perform error correction on test set. 
+* Evaluation(Part 5): Did word-wise and character-wise evaluation and sought the limitation of the method. 
+* Wrapped up codes with Mengran Xia.
+* Actively participated in group meetings. 
+* Formed the discussion group, organized the structure of the project.
+
+_Xia, Mengran mx2205_ (major contributor)
 * Wrote the codes of part 3: error detection on main.rmd and drafted 3 functions. 
 * Modified comments in part 3: detection.
 * Assited Yujie Wang on part 5: determining performance evaluation method.
 * Finalized main rmd and knit html along with Yujie Wang
 * Actively participated in group meetings. 
-
 
  All team members approve our work presented in this GitHub repository including this contributions statement. 
 
