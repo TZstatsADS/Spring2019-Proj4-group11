@@ -106,7 +106,7 @@ for(i in c(1:length(file_name_vec))){
 
 Now, we are ready to conduct post-processing, based on the Tessearct OCR output. First of all, we need to detect errors, or *incorrectly processed words* -- check to see if an input string is a valid dictionary word or if its n-grams are all legal.
 
-Paper: C2
+Paper: D1
 
 Here we followed the paper and implemented the rule-based methodology.
 ```{r, warning=FALSE, message = FALSE}
@@ -382,7 +382,7 @@ where *items* refer to either characters or words, and ground truth is the origi
 Both *precision* and *recall* are mathematically convenient measures because their numeric values are some decimal fractions in the range between 0.0 and 1.0, and thus can be written as percentages. For instance, recall is the percentage of words in the original text correctly found by the OCR engine, whereas precision is the percentage of correctly found words with respect to the total word count of the OCR output. Note that in the OCR-related literature, the term OCR accuracy often refers to recall.
 
 
-## Step 5.1 - Perform Evaluation
+## 5.1 - Perform Evaluation
 Finally, we evaluate the performance the algorithms by comparing the word-level and character-level precision and recall. For the number of correct items in the precision and recall functions. We used the following method to calculate: we combine the cleaned words and the corrected words and took the intersection with the ground truth. For character-wise: We split the OCR, corrected list and ground truth into characters, and calculated the intersection between the characters in corrected list and those in ground truth.
 ```{r}
 #ground truth txt file without punctutations in the test group
@@ -457,9 +457,9 @@ ele_recall_char <- length(vecsets::vintersect(correction_char, ground_char))/ le
 ele_prec_char <- length(vecsets::vintersect(correction_char, ground_char))/ length(tes_char)
 ```
 
-## Step 5.2 - Evaluation output
+## 5.2 - Evaluation output
 
-- Word level: The precision and recall of the original Tessearct OCR outputs are 61.51105% and 64.57310%. With post-processing, both precision and recall increased around 3%. Adopting the idea of SVM garbage detection and probability scoring with contextual constraints can somewhat improve the Tesseract OCR output in terms of correcting words.
+- Word level: The precision and recall of the original Tessearct OCR outputs are 61.51105% and 64.57310%. With post-processing, both precision and recall increased around 3%. Adopting the idea of garbage detection and probability scoring without contextual constraints can somewhat improve the Tesseract OCR output in terms of correcting words.
 
 - Character level: All lowercase and uppercase letters are considered. The original Tessearct OCR outputs has precision 90.39345% and recall 91.00901%. After post-processing, the results are quite similar to the original ones, with the precision score and the recall both increasing around 0.6%.
 
@@ -479,6 +479,9 @@ OCR_performance_table$Tesseract_with_postprocessing[3] <- ele_recall_char
 OCR_performance_table$Tesseract_with_postprocessing[4] <- ele_prec_char
 kable(OCR_performance_table, caption="Summary of OCR performance")
 ```
+
+## 5.3 Reflection
+
 
 
 # References {-}
