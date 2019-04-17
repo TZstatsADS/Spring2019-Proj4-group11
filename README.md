@@ -40,13 +40,13 @@ _Liu, Siwei sl4224_
 * Created Power Point slide and presented the project in class
 
 _Vitha, Matthew mv2705_
-* assisted and provided suggestions in testing and evaluation part
-* attended all group meeting
+* assisted and provided suggestions in testing and evaluation parts
+* attended and participated in all group meetings
 
 _Wang, Yujie yw3285_ (group leader)
 * Error Correction (Part 4): Built and implemented functions for candidate nomination, prior probability calculation, channel probability calculation, candidate score calculation. Compute denominator (char_x and char_xy) for channel probability from data in the trainning set. 
-* Testing: Perform error correction on test set. 
-* Evaluation(Part 5): Did word-wise and character-wise evaluation and sought the limitation of the method. 
+* Testing: Performed error correction on test set. 
+* Evaluation(Part 5): Did word-wise and character-wise evaluation and sought the limitations of the method. 
 * Wrapped up codes with Mengran Xia.
 * Actively participated in group meetings. 
 * Formed the discussion group, organized the structure of the project.
