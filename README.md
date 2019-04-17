@@ -39,6 +39,12 @@ _Liu, Siwei sl4224_
 * Added comments in the main file and files in the lib folder to increase readability
 * Created Power Point slide and presented the project in class
 
+_Xia, Mengran mx2205_
+* Drafted the codes of error detection on main.rmd and wrote 3 functions. 
+* Modified comments in part 3: detection 
+* Assited Yujie Wang on part 5: determining performance evaluation method.
+* Finalized main rmd and knit html along with Yujie Wang
+
 
  All team members approve our work presented in this GitHub repository including this contributions statement. 
 
