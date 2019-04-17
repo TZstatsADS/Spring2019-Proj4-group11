@@ -112,6 +112,8 @@ Here we followed the paper and implemented the rule-based methodology.
 ```{r, warning=FALSE, message = FALSE}
 source("../lib/finding_mismatch.R")
 source("../lib/detect.R")
+
+# load initialze variables
 total_ground_truth <- list()
 total_tesseract <- list()
 total_mismatch <- list()
@@ -125,9 +127,12 @@ len_check2 = rep(NA, 100)
 
 file_name <- list.files("../data/ground_truth")
 
+# for corrections
 for (i in 1:length(file_name)){
  original_file <- sub(".txt","",file_name[i])
+ ## read the ground truth text
  original_ground_truth <- readLines(paste("../data/ground_truth/",original_file,".txt",sep=""), warn=FALSE)
+ ## read the tesseract text
  original_tesseract <- readLines(paste("../data/tesseract/",original_file,".txt",sep=""), warn=FALSE)
  len_check[i] = length(original_ground_truth) == length(original_tesseract)
  len_check2[i] = length(original_ground_truth) >= length(original_tesseract)
@@ -164,11 +169,11 @@ for (k in 1:length(ground_filename)){
 ```
 
 ```{r, eval=F}
-  ################################################
-  ### Please note that we figured there are exactly 13 text files whose total number of lines do not match 
-  ### between their corresponding ground_truth and tesseract files. Therefore, we manually trimmed the
-  ### lines of those ground_truth files
-  ################################################
+  ############################################################################################################
+  ### Please note that we figured there are exactly 13 text files whose total number of lines do not match ###
+  ### between their corresponding ground_truth and tesseract files. Therefore, we manually trimmed the     ###
+  ### lines of those ground_truth files                                                                    ###
+  ############################################################################################################
   
   ## Check if there are any mismatches in terms of article's total number of rows
   for (k in 1:length(ground_filename)){
@@ -324,11 +329,11 @@ sapply(acress_candidate, channel_prob, "acress")
 
 ## Step 4.4 - Performing corrections on test files
 ```{r detected error correction}
+#load data
 load("../output/total_tesseract.RData")
 load("../output/total_ground_truth.RData")
 load("../output/final_detect_output.RData")
 load("../output/final_tesseract_clean_output.RData")
-
 
 #clean words in test group
 test_group_clean <- final_tesseract_clean_output[-train_index]
@@ -409,7 +414,6 @@ tes_precsion[i] <- (length(vecsets::vintersect(ground_truth_test_vec[[i]], OCR_t
 }
 
 tes_precsion <- sum(tes_precsion)
-
 
 
 #wordwise recall ele
