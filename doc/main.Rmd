@@ -210,7 +210,7 @@ The referenced paper is: C3
 [Probability scoring without context](https://link.springer.com/content/pdf/10.1007%2FBF01889984.pdf)
 
 
-## 4.1 train test split
+## Step 4.1 - train test split
 ```{r}
 readfile <- function(file_name){
   readLines(paste("../data/ground_truth/",file_name,sep=""), warn=FALSE)
@@ -231,7 +231,7 @@ train_truth_text <- unlist(ground_truth_text[train_index])
 train_truth_text_vec <- unlist(str_split(train_truth_text, " "))
 ```
 
-## 4.2 Choose candiates
+## Step 4.2 - Choose candiates
 ```{r}
 source('../lib/candidate.R')
 source('../lib/prior.R')
@@ -249,7 +249,7 @@ acress_candidate <- choose_candidate("acress")
 acress_candidate
 ```
 
-## 4.3 Test the functions built for probability scoring
+## Step 4.3 - Test the functions built for probability scoring
 
 The probability scoring $score = Pr(c) Pr(typo|cor)$ 
 
@@ -263,7 +263,7 @@ The probability scoring $score = Pr(c) Pr(typo|cor)$
         3. V: the vocabulary size
 
 
-### 4.3.1 prior probability
+### Step 4.3.1 - Prior probability
 ```{r}
 priors <- prior_prob(train_truth_text_vec)
 priors_mle <- prior_prob(train_truth_text, method = "mle")
@@ -277,7 +277,7 @@ sort(unlist(priors[acress_candidate]))
 
 We choose to use ELE method, since MLE is poor when observed frequency of a certain word is 0.
 
-### 4.3.2 channel probability
+### Step 4.3.2 - Channel probability
 
 * Channel probability $Pr(typo|cor)$:
 
@@ -322,7 +322,7 @@ sapply(acress_candidate, channel_prob, "acress")
 
 
 
-## 4.4 Performing corrections on test files
+## Step 4.4 - Performing corrections on test files
 ```{r detected error correction}
 load("../output/total_tesseract.RData")
 load("../output/total_ground_truth.RData")
@@ -377,7 +377,7 @@ where *items* refer to either characters or words, and ground truth is the origi
 Both *precision* and *recall* are mathematically convenient measures because their numeric values are some decimal fractions in the range between 0.0 and 1.0, and thus can be written as percentages. For instance, recall is the percentage of words in the original text correctly found by the OCR engine, whereas precision is the percentage of correctly found words with respect to the total word count of the OCR output. Note that in the OCR-related literature, the term OCR accuracy often refers to recall.
 
 
-## 5.1 Perform Evaluation
+## Step 5.1 - Perform Evaluation
 Finally, we evaluate the performance the algorithms by comparing the word-level and character-level precision and recall. For the number of correct items in the precision and recall functions. We used the following method to calculate: we combine the cleaned words and the corrected words and took the intersection with the ground truth. For character-wise: We split the OCR, corrected list and ground truth into characters, and calculated the intersection between the characters in corrected list and those in ground truth.
 ```{r}
 #ground truth txt file without punctutations in the test group
@@ -390,7 +390,7 @@ ground_truth_test_vec <- lapply(ground_truth_test, function(x){tolower(unlist(st
 OCR_test_vec <- lapply(OCR_test, function(x){tolower(unlist(str_split(x, " ")))})
 ```
 
-###wordwise evaluation
+###Wordwise evaluation
 ```{r}
 weights_recall <- lengths(ground_truth_test_vec)/sum(lengths(ground_truth_test_vec))
 weights_prec <- lengths(OCR_test_vec)/sum(lengths(OCR_test_vec))
@@ -432,7 +432,7 @@ eleprecision[i] <- (length(vecsets::vintersect(ground_truth_test_vec[[i]], combi
 eleprecision <- sum(eleprecision)
 ```
 
-###character level evaluation
+###Character level evaluation
 ```{r}
 # character recall for tesseract
 tes_char <- unlist(str_split(unlist(OCR_test_vec), ""))
@@ -453,7 +453,12 @@ ele_recall_char <- length(vecsets::vintersect(correction_char, ground_char))/ le
 ele_prec_char <- length(vecsets::vintersect(correction_char, ground_char))/ length(tes_char)
 ```
 
-## 5.2  Evaluation output
+## Step 5.2 - Evaluation output
+
+- Word level: The precision and recall of the original Tessearct OCR outputs are 61.51105% and 64.57310%. With post-processing, both precision and recall increased around 3%. Adopting the idea of SVM garbage detection and probability scoring with contextual constraints can somewhat improve the Tesseract OCR output in terms of correcting words.
+
+- Character level: All lowercase and uppercase letters are considered. The original Tessearct OCR outputs has precision 90.39345% and recall 91.00901%. After post-processing, the results are quite similar to the original ones, with the precision score and the recall both increasing around 0.6%.
+
 ```{r}
 OCR_performance_table <- data.frame("Tesseract" = rep(NA,4),
                                     "Tesseract_with_postprocessing" = rep(NA,4))
