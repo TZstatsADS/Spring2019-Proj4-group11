@@ -11,9 +11,11 @@ output:
     code_folding: hide
 ---
 
-Jing Wu
+
 
 GU4243/GR5243: Applied Data Science
+
+Group11
 
 <style type="text/css">
 h1.title {
@@ -56,7 +58,7 @@ BUT this is not the FOCUS of this project!!!
 
 In this project, we are going to **focus on the third stage -- post-processing**, which includes two tasks: *error detection* and *error correction*.  
 
-# Step 1 - Load library and source code
+# Step 1 - Load library 
 ```{r load lib, warning=FALSE, message = FALSE}
 if (!require("pacman")) {
   library(devtools)
@@ -78,7 +80,7 @@ pacman::p_load(knitr, readr, stringr, tesseract, vecsets)
 
 
 file_name_vec <- list.files("../data/ground_truth") #100 files in total
-
+ground_filename <- list.files("../data/ground_truth_cut") 
 ```
 
 # Step 2 - Read the files and conduct Tesseract OCR
@@ -104,60 +106,109 @@ for(i in c(1:length(file_name_vec))){
 
 Now, we are ready to conduct post-processing, based on the Tessearct OCR output. First of all, we need to detect errors, or *incorrectly processed words* -- check to see if an input string is a valid dictionary word or if its n-grams are all legal.
 
-The referenced papers are:
+Paper: C2
 
-1. [Rule-based techniques](http://webpages.ursinus.edu/akontostathis/KulpKontostathisFinal.pdf)
+Here we followed the paper and implemented the rule-based methodology.
+```{r, warning=FALSE, message = FALSE}
+source("../lib/finding_mismatch.R")
+source("../lib/detect.R")
+total_ground_truth <- list()
+total_tesseract <- list()
+total_mismatch <- list()
+detection_output <- list()
+final_detect_output <- list()
+final_tesseract_clean_output <- list()
+total_mismatch_100 <- matrix(NA, nrow = length(ground_filename), ncol = 2)
 
-- rules are in the section 2.2 
+len_check = rep(NA, 100)
+len_check2 = rep(NA, 100)
 
-2. [Letter n-gram](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1672564)
+file_name <- list.files("../data/ground_truth")
 
-- focus on positional binary digram in section 3-a.error detection
+for (i in 1:length(file_name)){
+ original_file <- sub(".txt","",file_name[i])
+ original_ground_truth <- readLines(paste("../data/ground_truth/",original_file,".txt",sep=""), warn=FALSE)
+ original_tesseract <- readLines(paste("../data/tesseract/",original_file,".txt",sep=""), warn=FALSE)
+ len_check[i] = length(original_ground_truth) == length(original_tesseract)
+ len_check2[i] = length(original_ground_truth) >= length(original_tesseract)
+}
 
-3. Probabilistic techniques -- [SVM garbage detection](https://dl.acm.org/citation.cfm?doid=2034617.2034626)
+which(!len_check) 
+which(!len_check2)
+length(file_name)-sum(len_check)
+```
 
-- features are in section 5 (you can choose not to implement ‘Levenshtein distance’ feature)
+```{r}
+for (k in 1:length(ground_filename)){
+  current_file <- sub(".txt","",ground_filename[k])
+  ## read the ground truth text
+  current_ground_truth <- readLines(paste("../data/ground_truth_cut/",current_file,".txt",sep=""), warn=FALSE)
+  ## read the tesseract text
+  current_tesseract <- readLines(paste("../data/tesseract/",current_file,".txt",sep=""), warn=FALSE)
+  
+  ## Remove punctuations & remove leading and trailing zeros
+  current_ground_truth <- gsub('[[:punct:]]+','',current_ground_truth)
+  current_ground_truth <- trimws(current_ground_truth, which = "both")
+  current_tesseract <- gsub('[[:punct:]]+','',current_tesseract)
+  current_tesseract <- trimws(current_tesseract, which = "both")
+  
+  ## Record mismatching lines
+  mismatch_info <- finding_mismatch(tess = current_tesseract, grdth = current_ground_truth)
+  
+  ## Save into List
+  total_tesseract[[k]] <- current_tesseract
+  total_ground_truth[[k]] <- current_ground_truth
+  total_mismatch[[k]] <- mismatch_info
+}
 
+```
 
-In this statercode, we implement the first three rules in the first paper -- rule based techniques, as an example.
+```{r, eval=F}
+  ################################################
+  ### Please note that we figured there are exactly 13 text files whose total number of lines do not match 
+  ### between their corresponding ground_truth and tesseract files. Therefore, we manually trimmed the
+  ### lines of those ground_truth files
+  ################################################
+  
+  ## Check if there are any mismatches in terms of article's total number of rows
+  for (k in 1:length(ground_filename)){
+    total_mismatch_100[k,1] <- length(total_tesseract[[k]])
+    total_mismatch_100[k,2] <- length(total_ground_truth[[k]])
+  }
+  ## It turns out all articles match now
+  sum(total_mismatch_100[,1]==total_mismatch_100[,2]) == 100
+  ## Code to locate the index of the corresponding ground truth text
+  ## 1. if the number of words in corresponding row (between tesseract and ground_truth) are equal,
+  ## then locate the ground truth word by indexing directly
+  ## 2. if the number of words in corresponding row are not equal, extract previous and following 2 
+  ## words of the error word (total of 5 index), and apply string-distance function (stringdist) 
+  ## to locate the most likely ground truth word.
+  
+  for (k in 1:length(ground_filename)){
+    current_d1_output <- detect(current_tesseract = total_tesseract[[k]],
+                                        current_ground_truth = total_ground_truth[[k]],
+                                        mismatch_info = total_mismatch[[k]])
+    empty_index <- which(current_d1_output[[1]][,1] == "" | current_d1_output[[1]][,2] == "")
+      if(length(empty_index)>0){
+        final_detect_output[[k]] <- current_d1_output[[1]][-empty_index,]
+       }
+    final_tesseract_clean_output[[k]] <- current_d1_output[[2]]
+  }
 
-```{r, eval = F}
-### only process one of the files in the folder as an example, in your project, you need to use all the files
-current_file_name <- sub(".txt","",file_name_vec[5])
-
-## read the ground truth text
-current_ground_truth_txt <- readLines(paste("../data/ground_truth/",current_file_name,".txt",sep=""), warn=FALSE)
-
-## read the tesseract text
-current_tesseract_txt <- readLines(paste("../data/tesseract/",current_file_name,".txt",sep=""), warn=FALSE)
-clean_tesseract_txt <- paste(current_tesseract_txt, collapse = " ")
-
-## detect tesseract word error
-tesseract_vec <- str_split(clean_tesseract_txt," ")[[1]] #1124 tokens
-tesseract_if_clean <- unlist(lapply(tesseract_vec,ifCleanToken)) # source code of ifCleanToken in in lib folder
+#save(total_tesseract, file="../output/total_tesseract.RData")
+#save(total_ground_truth, file="../output/total_ground_truth.RData")
+#save(final_detect_output, file="../output/final_detect_output.RData")
+#save(final_tesseract_clean_output, file="../output/final_tesseract_clean_output.RData")
+  
 ```
 
 # Step 4 - Error correction
 
 Given the detected word error, in order to find the best correction, we need to generating the candidate corrections: a dictionary or a database of legal n-grams to locate one or more potential correction terms. Then we need invoke some lexical-similarity measure between the misspelled string and the candidates or a probabilistic estimate of the likelihood of the correction to rank order the candidates.
 
-The referenced papers are:
+The referenced paper is: C3
+[Probability scoring without context](https://link.springer.com/content/pdf/10.1007%2FBF01889984.pdf)
 
-1. [Letter n-gram](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=1672564}{positional binary digram)
-
-- focus on section 3-b.error correction
-
-2. Supervised model -- [correction regressor](https://arxiv.org/pdf/1611.06950.pdf)
-
-3. [Probability scoring without context](https://link.springer.com/content/pdf/10.1007%2FBF01889984.pdf)
-
-- focus on section 3
-
-4. [Probability scoring with contextual constraints](https://link.springer.com/content/pdf/10.1007%2FBF01889984.pdf)
-
-- focus on section 5
-
-5. [Topic models](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=4377099)
 
 ## 4.1 train test split
 ```{r}
@@ -205,7 +256,8 @@ The probability scoring $score = Pr(c) Pr(typo|cor)$
 * Prior probability $Pr(c)$:
 
     + frequency is estimated by frequency of words in the training set.
-    + Use ELE estimation: $Pr(c)=(freq(c) + 0.5)/(N + V/2)$ deal with the problem that MLE performs poorly when observed freqency of a word is zero, wherr\e
+    + Use ELE estimation: $Pr(c)=(freq(c) + 0.5)/(N + V/2)$ deal with the problem that MLE performs poorly when observed freqency of a word is zero, where
+        
         1. $freq(c)$; the frequency of the proposed correction c in the training corpus
         2. N: the total number of words
         3. V: the vocabulary size
@@ -272,18 +324,17 @@ sapply(acress_candidate, channel_prob, "acress")
 
 ## 4.4 Performing corrections on test files
 ```{r detected error correction}
-#load results from error detection part
-load("/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_detect_output.RData")
-load("/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_tesseract_clean_output.RData")
-load("/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_ground_truth_txt_100.RData")
-load("/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_tesseract_txt_100.RData")
+load("../output/total_tesseract.RData")
+load("../output/total_ground_truth.RData")
+load("../output/final_detect_output.RData")
+load("../output/final_tesseract_clean_output.RData")
 
 
 #clean words in test group
-test_group_clean <- total_tesseract_clean_output[-train_index]
+test_group_clean <- final_tesseract_clean_output[-train_index]
 
 #typo list to be corrected in the test group
-test_group <- total_detect_output[-train_index]
+test_group <- final_detect_output[-train_index]
 typo_list <- list()
 for (i in 1:length(test_group)) {
   typo_list[[i]] <- test_group[[i]]$tesseract_err
@@ -327,11 +378,12 @@ Both *precision* and *recall* are mathematically convenient measures because the
 
 
 ## 5.1 Perform Evaluation
+Finally, we evaluate the performance the algorithms by comparing the word-level and character-level precision and recall. For the number of correct items in the precision and recall functions. We used the following method to calculate: we combine the cleaned words and the corrected words and took the intersection with the ground truth. For character-wise: We split the OCR, corrected list and ground truth into characters, and calculated the intersection between the characters in corrected list and those in ground truth.
 ```{r}
 #ground truth txt file without punctutations in the test group
-ground_truth_test <- total_ground_truth_txt_100[-train_index]
+ground_truth_test <- total_ground_truth[-train_index]
 #tesseract file without punctutations in the test group
-OCR_test <- total_tesseract_txt_100[-train_index]
+OCR_test <- total_tesseract[-train_index]
 
 #split the files into word level
 ground_truth_test_vec <- lapply(ground_truth_test, function(x){tolower(unlist(str_split(x, " ")))})

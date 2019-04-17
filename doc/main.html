@@ -309,8 +309,8 @@ div.tocify {
 </div>
 
 
-<p>Jing Wu</p>
 <p>GU4243/GR5243: Applied Data Science</p>
+<p>Group11</p>
 <style type="text/css">
 h1.title {
   font-size: 24px;
@@ -349,8 +349,8 @@ h4 { /* Header 4 */
 <p>BUT this is not the FOCUS of this project!!!</p>
 <p>In this project, we are going to <strong>focus on the third stage – post-processing</strong>, which includes two tasks: <em>error detection</em> and <em>error correction</em>.</p>
 </div>
-<div id="step-1---load-library-and-source-code" class="section level1">
-<h1><span class="header-section-number">1</span> Step 1 - Load library and source code</h1>
+<div id="step-1---load-library" class="section level1">
+<h1><span class="header-section-number">1</span> Step 1 - Load library</h1>
 <pre class="r"><code>if (!require(&quot;pacman&quot;)) {
   library(devtools)
   install_github(&quot;trinker/pacman&quot;)
@@ -370,7 +370,8 @@ pacman::p_load(knitr, readr, stringr, tesseract, vecsets)
 
 
 
-file_name_vec &lt;- list.files(&quot;../data/ground_truth&quot;) #100 files in total</code></pre>
+file_name_vec &lt;- list.files(&quot;../data/ground_truth&quot;) #100 files in total
+ground_filename &lt;- list.files(&quot;../data/ground_truth_cut&quot;) </code></pre>
 </div>
 <div id="step-2---read-the-files-and-conduct-tesseract-ocr" class="section level1">
 <h1><span class="header-section-number">2</span> Step 2 - Read the files and conduct Tesseract OCR</h1>
@@ -391,66 +392,98 @@ file_name_vec &lt;- list.files(&quot;../data/ground_truth&quot;) #100 files in t
 <div id="step-3---error-detection" class="section level1">
 <h1><span class="header-section-number">3</span> Step 3 - Error detection</h1>
 <p>Now, we are ready to conduct post-processing, based on the Tessearct OCR output. First of all, we need to detect errors, or <em>incorrectly processed words</em> – check to see if an input string is a valid dictionary word or if its n-grams are all legal.</p>
-<p>The referenced papers are:</p>
-<ol style="list-style-type: decimal">
-<li><a href="http://webpages.ursinus.edu/akontostathis/KulpKontostathisFinal.pdf">Rule-based techniques</a></li>
-</ol>
-<ul>
-<li>rules are in the section 2.2</li>
-</ul>
-<ol start="2" style="list-style-type: decimal">
-<li><a href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=1672564">Letter n-gram</a></li>
-</ol>
-<ul>
-<li>focus on positional binary digram in section 3-a.error detection</li>
-</ul>
-<ol start="3" style="list-style-type: decimal">
-<li>Probabilistic techniques – <a href="https://dl.acm.org/citation.cfm?doid=2034617.2034626">SVM garbage detection</a></li>
-</ol>
-<ul>
-<li>features are in section 5 (you can choose not to implement ‘Levenshtein distance’ feature)</li>
-</ul>
-<p>In this statercode, we implement the first three rules in the first paper – rule based techniques, as an example.</p>
-<pre class="r"><code>### only process one of the files in the folder as an example, in your project, you need to use all the files
-current_file_name &lt;- sub(&quot;.txt&quot;,&quot;&quot;,file_name_vec[5])
+<p>Paper: C2</p>
+<p>Here we followed the paper and implemented the rule-based methodology.</p>
+<pre class="r"><code>source(&quot;../lib/finding_mismatch.R&quot;)
+source(&quot;../lib/detect.R&quot;)
+total_ground_truth &lt;- list()
+total_tesseract &lt;- list()
+total_mismatch &lt;- list()
+detection_output &lt;- list()
+final_detect_output &lt;- list()
+final_tesseract_clean_output &lt;- list()
+total_mismatch_100 &lt;- matrix(NA, nrow = length(ground_filename), ncol = 2)
 
-## read the ground truth text
-current_ground_truth_txt &lt;- readLines(paste(&quot;../data/ground_truth/&quot;,current_file_name,&quot;.txt&quot;,sep=&quot;&quot;), warn=FALSE)
+len_check = rep(NA, 100)
+len_check2 = rep(NA, 100)
 
-## read the tesseract text
-current_tesseract_txt &lt;- readLines(paste(&quot;../data/tesseract/&quot;,current_file_name,&quot;.txt&quot;,sep=&quot;&quot;), warn=FALSE)
-clean_tesseract_txt &lt;- paste(current_tesseract_txt, collapse = &quot; &quot;)
+file_name &lt;- list.files(&quot;../data/ground_truth&quot;)
 
-## detect tesseract word error
-tesseract_vec &lt;- str_split(clean_tesseract_txt,&quot; &quot;)[[1]] #1124 tokens
-tesseract_if_clean &lt;- unlist(lapply(tesseract_vec,ifCleanToken)) # source code of ifCleanToken in in lib folder</code></pre>
+for (i in 1:length(file_name)){
+ original_file &lt;- sub(&quot;.txt&quot;,&quot;&quot;,file_name[i])
+ original_ground_truth &lt;- readLines(paste(&quot;../data/ground_truth/&quot;,original_file,&quot;.txt&quot;,sep=&quot;&quot;), warn=FALSE)
+ original_tesseract &lt;- readLines(paste(&quot;../data/tesseract/&quot;,original_file,&quot;.txt&quot;,sep=&quot;&quot;), warn=FALSE)
+ len_check[i] = length(original_ground_truth) == length(original_tesseract)
+ len_check2[i] = length(original_ground_truth) &gt;= length(original_tesseract)
+}
+
+which(!len_check) </code></pre>
+<pre><code>##  [1]   3  10  22  23  34  41  61  63  68  70  72  80 100</code></pre>
+<pre class="r"><code>which(!len_check2)</code></pre>
+<pre><code>## integer(0)</code></pre>
+<pre class="r"><code>length(file_name)-sum(len_check)</code></pre>
+<pre><code>## [1] 13</code></pre>
+<pre class="r"><code>for (k in 1:length(ground_filename)){
+  current_file &lt;- sub(&quot;.txt&quot;,&quot;&quot;,ground_filename[k])
+  ## read the ground truth text
+  current_ground_truth &lt;- readLines(paste(&quot;../data/ground_truth_cut/&quot;,current_file,&quot;.txt&quot;,sep=&quot;&quot;), warn=FALSE)
+  ## read the tesseract text
+  current_tesseract &lt;- readLines(paste(&quot;../data/tesseract/&quot;,current_file,&quot;.txt&quot;,sep=&quot;&quot;), warn=FALSE)
+  
+  ## Remove punctuations &amp; remove leading and trailing zeros
+  current_ground_truth &lt;- gsub('[[:punct:]]+','',current_ground_truth)
+  current_ground_truth &lt;- trimws(current_ground_truth, which = &quot;both&quot;)
+  current_tesseract &lt;- gsub('[[:punct:]]+','',current_tesseract)
+  current_tesseract &lt;- trimws(current_tesseract, which = &quot;both&quot;)
+  
+  ## Record mismatching lines
+  mismatch_info &lt;- finding_mismatch(tess = current_tesseract, grdth = current_ground_truth)
+  
+  ## Save into List
+  total_tesseract[[k]] &lt;- current_tesseract
+  total_ground_truth[[k]] &lt;- current_ground_truth
+  total_mismatch[[k]] &lt;- mismatch_info
+}</code></pre>
+<pre class="r"><code>  ################################################
+  ### Please note that we figured there are exactly 13 text files whose total number of lines do not match 
+  ### between their corresponding ground_truth and tesseract files. Therefore, we manually trimmed the
+  ### lines of those ground_truth files
+  ################################################
+  
+  ## Check if there are any mismatches in terms of article's total number of rows
+  for (k in 1:length(ground_filename)){
+    total_mismatch_100[k,1] &lt;- length(total_tesseract[[k]])
+    total_mismatch_100[k,2] &lt;- length(total_ground_truth[[k]])
+  }
+  ## It turns out all articles match now
+  sum(total_mismatch_100[,1]==total_mismatch_100[,2]) == 100
+  ## Code to locate the index of the corresponding ground truth text
+  ## 1. if the number of words in corresponding row (between tesseract and ground_truth) are equal,
+  ## then locate the ground truth word by indexing directly
+  ## 2. if the number of words in corresponding row are not equal, extract previous and following 2 
+  ## words of the error word (total of 5 index), and apply string-distance function (stringdist) 
+  ## to locate the most likely ground truth word.
+  
+  for (k in 1:length(ground_filename)){
+    current_d1_output &lt;- detect(current_tesseract = total_tesseract[[k]],
+                                        current_ground_truth = total_ground_truth[[k]],
+                                        mismatch_info = total_mismatch[[k]])
+    empty_index &lt;- which(current_d1_output[[1]][,1] == &quot;&quot; | current_d1_output[[1]][,2] == &quot;&quot;)
+      if(length(empty_index)&gt;0){
+        final_detect_output[[k]] &lt;- current_d1_output[[1]][-empty_index,]
+       }
+    final_tesseract_clean_output[[k]] &lt;- current_d1_output[[2]]
+  }
+
+#save(total_tesseract, file=&quot;../output/total_tesseract.RData&quot;)
+#save(total_ground_truth, file=&quot;../output/total_ground_truth.RData&quot;)
+#save(final_detect_output, file=&quot;../output/final_detect_output.RData&quot;)
+#save(final_tesseract_clean_output, file=&quot;../output/final_tesseract_clean_output.RData&quot;)</code></pre>
 </div>
 <div id="step-4---error-correction" class="section level1">
 <h1><span class="header-section-number">4</span> Step 4 - Error correction</h1>
 <p>Given the detected word error, in order to find the best correction, we need to generating the candidate corrections: a dictionary or a database of legal n-grams to locate one or more potential correction terms. Then we need invoke some lexical-similarity measure between the misspelled string and the candidates or a probabilistic estimate of the likelihood of the correction to rank order the candidates.</p>
-<p>The referenced papers are:</p>
-<ol style="list-style-type: decimal">
-<li><a href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=1672564%7D%7Bpositional%20binary%20digram">Letter n-gram</a></li>
-</ol>
-<ul>
-<li>focus on section 3-b.error correction</li>
-</ul>
-<ol start="2" style="list-style-type: decimal">
-<li><p>Supervised model – <a href="https://arxiv.org/pdf/1611.06950.pdf">correction regressor</a></p></li>
-<li><p><a href="https://link.springer.com/content/pdf/10.1007%2FBF01889984.pdf">Probability scoring without context</a></p></li>
-</ol>
-<ul>
-<li>focus on section 3</li>
-</ul>
-<ol start="4" style="list-style-type: decimal">
-<li><a href="https://link.springer.com/content/pdf/10.1007%2FBF01889984.pdf">Probability scoring with contextual constraints</a></li>
-</ol>
-<ul>
-<li>focus on section 5</li>
-</ul>
-<ol start="5" style="list-style-type: decimal">
-<li><a href="https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=4377099">Topic models</a></li>
-</ol>
+<p>The referenced paper is: C3 <a href="https://link.springer.com/content/pdf/10.1007%2FBF01889984.pdf">Probability scoring without context</a></p>
 <div id="train-test-split" class="section level2">
 <h2><span class="header-section-number">4.1</span> 4.1 train test split</h2>
 <pre class="r"><code>readfile &lt;- function(file_name){
@@ -493,8 +526,9 @@ acress_candidate</code></pre>
 <li><p>Prior probability <span class="math inline">\(Pr(c)\)</span>:</p>
 <ul>
 <li>frequency is estimated by frequency of words in the training set.</li>
-<li>Use ELE estimation: <span class="math inline">\(Pr(c)=(freq(c) + 0.5)/(N + V/2)\)</span> deal with the problem that MLE performs poorly when observed freqency of a word is zero, wherr1. <span class="math inline">\(freq(c)\)</span>; the frequency of the proposed correction c in the training corpus
-<ol start="2" style="list-style-type: decimal">
+<li><p>Use ELE estimation: <span class="math inline">\(Pr(c)=(freq(c) + 0.5)/(N + V/2)\)</span> deal with the problem that MLE performs poorly when observed freqency of a word is zero, where</p>
+<ol style="list-style-type: decimal">
+<li><span class="math inline">\(freq(c)\)</span>; the frequency of the proposed correction c in the training corpus</li>
 <li>N: the total number of words</li>
 <li>V: the vocabulary size</li>
 </ol></li>
@@ -567,18 +601,17 @@ sapply(acress_candidate, channel_prob, &quot;acress&quot;)</code></pre>
 </div>
 <div id="performing-corrections-on-test-files" class="section level2">
 <h2><span class="header-section-number">4.4</span> 4.4 Performing corrections on test files</h2>
-<pre class="r"><code>#load results from error detection part
-load(&quot;/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_detect_output.RData&quot;)
-load(&quot;/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_tesseract_clean_output.RData&quot;)
-load(&quot;/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_ground_truth_txt_100.RData&quot;)
-load(&quot;/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_tesseract_txt_100.RData&quot;)
+<pre class="r"><code>load(&quot;../output/total_tesseract.RData&quot;)
+load(&quot;../output/total_ground_truth.RData&quot;)
+load(&quot;../output/final_detect_output.RData&quot;)
+load(&quot;../output/final_tesseract_clean_output.RData&quot;)
 
 
 #clean words in test group
-test_group_clean &lt;- total_tesseract_clean_output[-train_index]
+test_group_clean &lt;- final_tesseract_clean_output[-train_index]
 
 #typo list to be corrected in the test group
-test_group &lt;- total_detect_output[-train_index]
+test_group &lt;- final_detect_output[-train_index]
 typo_list &lt;- list()
 for (i in 1:length(test_group)) {
   typo_list[[i]] &lt;- test_group[[i]]$tesseract_err
@@ -620,9 +653,9 @@ The two most common OCR accuracy measures are precision and recall. Both are rel
 <div id="perform-evaluation" class="section level2">
 <h2><span class="header-section-number">5.1</span> 5.1 Perform Evaluation</h2>
 <pre class="r"><code>#ground truth txt file without punctutations in the test group
-ground_truth_test &lt;- total_ground_truth_txt_100[-train_index]
+ground_truth_test &lt;- total_ground_truth[-train_index]
 #tesseract file without punctutations in the test group
-OCR_test &lt;- total_tesseract_txt_100[-train_index]
+OCR_test &lt;- total_tesseract[-train_index]
 
 #split the files into word level
 ground_truth_test_vec &lt;- lapply(ground_truth_test, function(x){tolower(unlist(str_split(x, &quot; &quot;)))})
@@ -718,22 +751,22 @@ kable(OCR_performance_table, caption=&quot;Summary of OCR performance&quot;)</co
 <tr class="odd">
 <td>word_wise_recall</td>
 <td align="right">0.6151105</td>
-<td align="right">0.6457310</td>
+<td align="right">0.6435382</td>
 </tr>
 <tr class="even">
 <td>word_wise_precision</td>
 <td align="right">0.6042648</td>
-<td align="right">0.6339766</td>
+<td align="right">0.6318238</td>
 </tr>
 <tr class="odd">
 <td>character_wise_recall</td>
 <td align="right">0.9039345</td>
-<td align="right">0.9100901</td>
+<td align="right">0.9048772</td>
 </tr>
 <tr class="even">
 <td>character_wise_precision</td>
 <td align="right">0.9190134</td>
-<td align="right">0.9252718</td>
+<td align="right">0.9199719</td>
 </tr>
 </tbody>
 </table>
