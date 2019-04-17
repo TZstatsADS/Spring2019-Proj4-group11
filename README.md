@@ -44,6 +44,7 @@ _Xia, Mengran mx2205_
 * Modified comments in part 3: detection.
 * Assited Yujie Wang on part 5: determining performance evaluation method.
 * Finalized main rmd and knit html along with Yujie Wang
+* Actively participated in group meetings. 
 
 
  All team members approve our work presented in this GitHub repository including this contributions statement. 
