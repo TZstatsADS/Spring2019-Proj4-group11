@@ -62,7 +62,7 @@ _Yao, Yu yy2906_
 * Wrote the initial detect and feturescore functions in detection part.
 * Add comments in code parts and fix the format in detection correction and evaluation part.
 * Assited Yujie Wang on part 4: the draft function of algorithms in correction part.
-* Wrote the statement in part 5: results display and comparison in the overall evaluation part.
+* Wrote the code and statement in part 5: results display and comparison in the overall evaluation part.
 * Actively participated in group meetings.
 
 
