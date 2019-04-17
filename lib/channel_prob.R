@@ -19,7 +19,7 @@ train_truth_text <- unlist(ground_truth_text[train_index])
 #split the text into single character
 train_truth_chr <- tolower(unlist(str_split(paste(train_truth_text, collapse = "#"),"")))
 
-#1. calculate chars[x]: number of times 'x' appeared in the training set
+###1. calculate chars[x]: number of times 'x' appeared in the training set
 #select characters which are letters or " "
 train_truth_letter <- train_truth_chr[train_truth_chr %in% letters|train_truth_chr =="#"]
 
@@ -29,7 +29,7 @@ char_x <- table(train_truth_letter)
 #rename chars[x]: replace " " with "#"
 names(char_x) <- c("#", letters)
 
-#2. calculate chars[x, y]: number of times 'x, y' appeared in the training set (x can be " ").
+###2. calculate chars[x, y]: number of times 'x, y' appeared in the training set (x can be " ").
 xy_list = c()
 
 #extract 2 consective characters
@@ -40,8 +40,11 @@ for (i in 1: length(train_truth_chr)-1){
 
 #calculate the frequency
 char_xy = table(xy_list)
-
-
+#subset char_xy for x in letters+"" and y in letters
+x = rep(c(letters, "#"), each = 26)
+y = rep(letters, times = 27)
+xy = paste(x,y, sep = '')
+char_xy <- char_xy[names(char_xy) %in% xy]
 # calculate the channel probabilities
 channel_prob <- function(candidates, typo){
   if (length(candidates) > 0){
@@ -51,16 +54,16 @@ channel_prob <- function(candidates, typo){
   #classify the type of typo
   typo_type = rep(NA, length(candidates))
   
-  # Deletion
+  # deletion
   typo_type[attr(distance, "counts")[,,'ins'] == 1 & distance != 2] = "DEL"
-  # Insertion
+  #insertion
   typo_type[attr(distance, "counts")[,,'del'] == 1 & distance != 2] = "INS"
-  # Reversal
+  #reversal
   typo_type[distance == 2] = "REV"
-  # Substitution
+  #substitution
   typo_type[attr(distance, "counts")[,,'sub'] == 1] = "SUB"
   
-  # calculate the channel probility
+  # calculate the channel prob
   numerator = rep(0, length(candidates))
   demoninator = rep(0, length(candidates))
   
