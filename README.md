@@ -41,6 +41,7 @@ _Liu, Siwei sl4224_
 
 _Vitha, Matthew mv2705_
 * assisted and provided suggestions in testing and evaluation parts
+* add comments in the main file
 * attended and participated in all group meetings
 
 _Wang, Yujie yw3285_ (group leader)
@@ -64,7 +65,6 @@ _Yao, Yu yy2906_
 * Assited Yujie Wang on part 4: the draft function of algorithms in correction part.
 * Wrote the code and statement in part 5: results display and comparison in the overall evaluation part.
 * Actively participated in group meetings.
-
 
 
  All team members approve our work presented in this GitHub repository including this contributions statement. 
