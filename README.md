@@ -41,7 +41,7 @@ _Liu, Siwei sl4224_
 
 _Vitha, Matthew mv2705_
 * assisted and provided suggestions in testing and evaluation parts
-* attended all group meetings
+* attended and participated in all group meetings
 
 _Wang, Yujie yw3285_ (group leader)
 * Error Correction (Part 4): Built and implemented functions for candidate nomination, prior probability calculation, channel probability calculation, candidate score calculation. Compute denominator (char_x and char_xy) for channel probability from data in the trainning set. 
