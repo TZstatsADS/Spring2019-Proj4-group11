@@ -20,8 +20,16 @@ Term: Spring 2019
 
 **(1) Error Detection**
 Since we figured there are 13 text files whose total number of lines do not match between their corresponding ground_truth and tesseract files, we manually trimmed the lines of those files and saved all those files in the folder called "ground_truth_trimmed. (We did line checks). Then we implemented the rest five methods of error detection. Detail of the total eight methods for error detection can be seen from the following figure.
-![image](https://github.com/TZstatsADS/Fall2018-Project4-sec1--section1-project4_group1/blob/master/figs/screen-2.PNG)
-	
+![image](https://github.com/TZstatsADS/Spring2019-Proj4-grp11/blob/master/figs/8methods_for_error_detection.png)
+
+**(2) Error Correction**
+As for correction, we used Bayesian probability scoring method, which utilizes two types of information sources: prior and channel. MLE and ELE estimation methods were applied. Since the MLE method is poor when observed frequency of a certain word is zero, we decided to implement ELE method. (1) Calculate the prior: we first calculated the frequency of each word (freq(c)) in the ground truth file. Then applied the ELE calculation, (freq(c) + 0.5) / (N + V /2), in which N is the length of english.words, and V is the length in the ground truth. (2) Calculate the channel: For the denominator, we calculated the number of times a certain character or consecutive two characters appears in the training set. For the numerator, We first found the candidates of the correction of the typo, and we figured which kind of typo it is (There are total four kinds: del, add, sub, rev), and where (which position) the typo is. And used the provided confusion matrix to calculate. For example?(I will add this part and the picture tmr) and we extracted the value from confusion matrix. For the denominator we can also extract from the table we calculated previously.
+
+**(3) Evaluation and performance measure**
+Finally, we evaluate the performance the algorithms by comparing the word-level and character-level precision and recall. For the ?number of correct items? in the precision and recall functions. We used the following method to calculate: we combine the cleaned words and the corrected words and took the intersection with the ground truth. For character-wise:
+We split the OCR, corrected list and ground truth into characters, and calculated the intersection between the characters in corrected list and those in ground truth. (I will add the sepecific performance tmr)
+
+
 **Contribution statement**: ([default](doc/a_note_on_contributions.md)) 
 
  All team members approve our work presented in this GitHub repository including this contributions statement. 
