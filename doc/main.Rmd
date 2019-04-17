@@ -502,7 +502,7 @@ df%>% group_by(typo_type) %>% summarise(total_count = n())
 df%>% group_by(typo_type) %>% summarise(success_rate = mean(success))
 ```
 
-#
+We find that probability scoring method in paper C3 mainly deals with spelling error, however OCR leads to scanning error. Those two types of errors are internally different. This is the reason why most of our corrections are substitue a charactor with another. The accuracy of substitution is 98%.
 
 # References {-}
 
@@ -522,4 +522,4 @@ df%>% group_by(typo_type) %>% summarise(success_rate = mean(success))
 (This paper is the source of our evaluation criterion)
 
 5. Kukich, K. (1992). *Techniques for automatically correcting words in text*. Acm Computing Surveys (CSUR), 24(4), 377-439. [pdf](http://www.unige.ch/eti/ptt/docs/kukich-92.pdf)
-(This paper is the benchmark review paper)
+(This paper is the benchmark review paper).
