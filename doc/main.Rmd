@@ -80,7 +80,7 @@ pacman::p_load(knitr, readr, stringr, tesseract, vecsets)
 
 
 file_name_vec <- list.files("../data/ground_truth") #100 files in total
-ground_filename <- list.files("../data/ground_truth_cut") 
+ground_filename <- list.files("../data/ground_truth_trimmed") 
 ```
 
 # Step 2 - Read the files and conduct Tesseract OCR
@@ -142,7 +142,7 @@ length(file_name)-sum(len_check)
 for (k in 1:length(ground_filename)){
   current_file <- sub(".txt","",ground_filename[k])
   ## read the ground truth text
-  current_ground_truth <- readLines(paste("../data/ground_truth_cut/",current_file,".txt",sep=""), warn=FALSE)
+  current_ground_truth <- readLines(paste("../data/ground_truth_trimmed/",current_file,".txt",sep=""), warn=FALSE)
   ## read the tesseract text
   current_tesseract <- readLines(paste("../data/tesseract/",current_file,".txt",sep=""), warn=FALSE)
   
