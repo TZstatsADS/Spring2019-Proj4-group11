@@ -159,7 +159,7 @@ The referenced papers are:
 
 5. [Topic models](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=4377099)
 
-## 4.1 train test split
+## Step - 4.1 train test split
 ```{r}
 readfile <- function(file_name){
   readLines(paste("../data/ground_truth/",file_name,sep=""), warn=FALSE)
@@ -180,7 +180,7 @@ train_truth_text <- unlist(ground_truth_text[train_index])
 train_truth_text_vec <- unlist(str_split(train_truth_text, " "))
 ```
 
-## 4.2 Choose candiates
+## Step - 4.2 Choose candiates
 ```{r}
 source('../lib/candidate.R')
 source('../lib/prior.R')
@@ -198,7 +198,7 @@ acress_candidate <- choose_candidate("acress")
 acress_candidate
 ```
 
-## 4.3 Test the functions built for probability scoring
+## Step - 4.3 Test the functions built for probability scoring
 
 The probability scoring $score = Pr(c) Pr(typo|cor)$ 
 
@@ -211,7 +211,7 @@ The probability scoring $score = Pr(c) Pr(typo|cor)$
         3. V: the vocabulary size
 
 
-### 4.3.1 prior probability
+### Step - 4.3.1 Prior probability
 ```{r}
 priors <- prior_prob(train_truth_text_vec)
 priors_mle <- prior_prob(train_truth_text, method = "mle")
@@ -225,7 +225,7 @@ sort(unlist(priors[acress_candidate]))
 
 We choose to use ELE method, since MLE is poor when observed frequency of a certain word is 0.
 
-### 4.3.2 channel probability
+### Step - 4.3.2 Channel probability
 
 * Channel probability $Pr(typo|cor)$:
 
@@ -270,7 +270,7 @@ sapply(acress_candidate, channel_prob, "acress")
 
 
 
-## 4.4 Performing corrections on test files
+## Step 4.4 - Performing corrections on test files
 ```{r detected error correction}
 #load results from error detection part
 load("/Users/yujiewang/Google Drive (yw3285@columbia.edu)/12345/Fall2018-Project4-sec1-grp8/output/total_detect_output.RData")
@@ -305,7 +305,6 @@ for(i in 1:20) {
      }
 }
 
-
 #combine clean words and corrected words
 combine_list <- rep(list(c()), 20)
 for(i in 1:20){
@@ -326,7 +325,7 @@ where *items* refer to either characters or words, and ground truth is the origi
 Both *precision* and *recall* are mathematically convenient measures because their numeric values are some decimal fractions in the range between 0.0 and 1.0, and thus can be written as percentages. For instance, recall is the percentage of words in the original text correctly found by the OCR engine, whereas precision is the percentage of correctly found words with respect to the total word count of the OCR output. Note that in the OCR-related literature, the term OCR accuracy often refers to recall.
 
 
-## 5.1 Perform Evaluation
+## Step 5.1 - Perform Evaluation
 ```{r}
 #ground truth txt file without punctutations in the test group
 ground_truth_test <- total_ground_truth_txt_100[-train_index]
@@ -338,7 +337,7 @@ ground_truth_test_vec <- lapply(ground_truth_test, function(x){tolower(unlist(st
 OCR_test_vec <- lapply(OCR_test, function(x){tolower(unlist(str_split(x, " ")))})
 ```
 
-###wordwise evaluation
+###Wordwise evaluation
 ```{r}
 weights_recall <- lengths(ground_truth_test_vec)/sum(lengths(ground_truth_test_vec))
 weights_prec <- lengths(OCR_test_vec)/sum(lengths(OCR_test_vec))
@@ -359,14 +358,12 @@ tes_precsion[i] <- (length(vecsets::vintersect(ground_truth_test_vec[[i]], OCR_t
 tes_precsion <- sum(tes_precsion)
 
 
-
 #wordwise recall ele
 
 elerecall <- rep(NA, 20)
 for (i in 1:20){
 elerecall[i] <- (length(vecsets::vintersect(ground_truth_test_vec[[i]], combine_list[[i]]))/length(ground_truth_test_vec[[i]])) * weights_recall[i]
 }
-
 
 elerecall <- sum(elerecall)
 
@@ -380,7 +377,7 @@ eleprecision[i] <- (length(vecsets::vintersect(ground_truth_test_vec[[i]], combi
 eleprecision <- sum(eleprecision)
 ```
 
-###character level evaluation
+###Character level evaluation
 ```{r}
 # character recall for tesseract
 tes_char <- unlist(str_split(unlist(OCR_test_vec), ""))
@@ -401,7 +398,12 @@ ele_recall_char <- length(vecsets::vintersect(correction_char, ground_char))/ le
 ele_prec_char <- length(vecsets::vintersect(correction_char, ground_char))/ length(tes_char)
 ```
 
-## 5.2  Evaluation output
+## Step 5.2 - Evaluation output
+
+- Word level: The precision and recall of the original Tessearct OCR outputs are 61.51105% and 64.57310%. With post-processing, both precision and recall increased around 3%. Adopting the idea of SVM garbage detection and probability scoring with contextual constraints can somewhat improve the Tesseract OCR output in terms of correcting words.
+
+- Character level: All lowercase and uppercase letters are considered. The original Tessearct OCR outputs has precision 90.39345% and recall 91.00901%. After post-processing, the results are quite similar to the original ones, with the precision score and the recall both increasing around 0.6%.
+
 ```{r}
 OCR_performance_table <- data.frame("Tesseract" = rep(NA,4),
                                     "Tesseract_with_postprocessing" = rep(NA,4))
@@ -420,7 +422,7 @@ kable(OCR_performance_table, caption="Summary of OCR performance")
 ```
 
 
-
+# References {-}
 1. Karpinski, R., Lohani, D., & Belaïd, A. *Metrics for Complete Evaluation of OCR Performance*. [pdf](https://csce.ucmss.com/cr/books/2018/LFS/CSREA2018/IPC3481.pdf)
 
 - section 2.1 Text-to-Text evaluation
@@ -433,10 +435,8 @@ kable(OCR_performance_table, caption="Summary of OCR performance")
 
 - section 3.2, consider the text alignment
 
-# References {-}
-
-1. Borovikov, E. (2014). *A survey of modern optical character recognition techniques*. arXiv preprint arXiv:1412.4183.[pdf](https://pdfs.semanticscholar.org/79c9/cc90b8c2e2c9c54c3862935ea00df7dd56ed.pdf)
+4. Borovikov, E. (2014). *A survey of modern optical character recognition techniques*. arXiv preprint arXiv:1412.4183.[pdf](https://pdfs.semanticscholar.org/79c9/cc90b8c2e2c9c54c3862935ea00df7dd56ed.pdf)
 (This paper is the source of our evaluation criterion)
 
-2. Kukich, K. (1992). *Techniques for automatically correcting words in text*. Acm Computing Surveys (CSUR), 24(4), 377-439. [pdf](http://www.unige.ch/eti/ptt/docs/kukich-92.pdf)
+5. Kukich, K. (1992). *Techniques for automatically correcting words in text*. Acm Computing Surveys (CSUR), 24(4), 377-439. [pdf](http://www.unige.ch/eti/ptt/docs/kukich-92.pdf)
 (This paper is the benchmark review paper)
