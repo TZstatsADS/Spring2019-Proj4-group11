@@ -40,7 +40,7 @@ _Liu, Siwei sl4224_
 * Created Power Point slide and presented the project in class
 
 _Xia, Mengran mx2205_
-* Wrote the codes of part 3: error detection on main.rmd and wrote 3 functions. 
+* Wrote the codes of part 3: error detection on main.rmd and drafted 3 functions. 
 * Modified comments in part 3: detection.
 * Assited Yujie Wang on part 5: determining performance evaluation method.
 * Finalized main rmd and knit html along with Yujie Wang
