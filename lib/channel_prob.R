@@ -16,14 +16,15 @@ char_x <- table(train_truth_letter)
 names(char_x) <- c("#", letters)
 
 ###2. calculate chars[x, y]: number of times 'x, y' appeared in the training set (x can be " ").
-################################have problem here###############################################
 xy_list = c()
 
+#extract 2 consective characters
 for (i in 1: length(train_truth_chr)-1){
   substring <- paste(train_truth_chr[i:(i+1)], collapse = "")
   xy_list[i] = substring
 }
 
+#calculate the frequency
 char_xy = table(xy_list)
 
 
@@ -90,9 +91,6 @@ channel_prob <- function(candidates, typo){
 }
   
  
-  # treat non-alphabetic characters as one class and assume their frequency would be larger than the others 
-  #numerator <- ifelse(is.numeric(numerator), numerator, 0.00001)
-  #denom <- ifelse(is.numeric(denom), denom, 0.00001)
 
 
 

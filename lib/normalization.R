@@ -12,10 +12,10 @@ ground_truth_chr <- tolower(unlist(str_split(unlist(ground_truth_text),"")))
 
 ###1. calculate chars[x]: number of times 'x' appeared in the training set
 #select characters which are letters or " "
-ground_truth_letter <- ground_truth_chr[ground_truth_chr %in% letters|ground_truth_chr ==" "]
+train_truth_letter <- train_truth_chr[train_truth_chr %in% letters|train_truth_chr ==" "]
 
 #calculate chars[x]
-char_x <- table(ground_truth_letter)
+char_x <- table(train_truth_letter)
 
 #rename chars[x]: replace " " with "@"
 names(char_x) <- c("@", letters)
@@ -29,11 +29,11 @@ colnames(char_xy) <- letters
 rownames(char_xy) <- c(letters, " ")
 
 #unlist
-ground_truth_text_unlist <- tolower(unlist(ground_truth_text))
+train_truth_text_unlist <- tolower(unlist(train_truth_text))
 
 #calculate the number of appearance for each xy (e.g "ab", " t")
 num_appear <- function(pattern){
-  sum(lengths(regmatches(ground_truth_text_unlist, gregexpr(pattern, ground_truth_text_unlist))))
+  sum(lengths(regmatches(train_truth_text_unlist, gregexpr(pattern, train_truth_text_unlist))))
 }
 
 #assign the value for char_xy matrix

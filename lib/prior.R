@@ -8,8 +8,8 @@ ele <- function(x) {
 # calculate the prior probabilities 
 prior_prob <- function(train_corpus){
   train_corpus <- tolower(train_corpus)
-  N <- length(train_corpus)
-  V <- length(candidate_dict)
+  N <- length(candidate_dict) ##########
+  V <- length(train_corpus) ###########
   #calculate freq(c)
   freqs <- rep(list(0), length(candidate_dict))
   names(freqs) <- candidate_dict
