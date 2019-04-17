@@ -392,10 +392,12 @@ ground_filename &lt;- list.files(&quot;../data/ground_truth_cut&quot;) </code></
 <div id="step-3---error-detection" class="section level1">
 <h1><span class="header-section-number">3</span> Step 3 - Error detection</h1>
 <p>Now, we are ready to conduct post-processing, based on the Tessearct OCR output. First of all, we need to detect errors, or <em>incorrectly processed words</em> – check to see if an input string is a valid dictionary word or if its n-grams are all legal.</p>
-<p>Paper: C2</p>
+<p>Paper: D1</p>
 <p>Here we followed the paper and implemented the rule-based methodology.</p>
 <pre class="r"><code>source(&quot;../lib/finding_mismatch.R&quot;)
 source(&quot;../lib/detect.R&quot;)
+
+# creating initial variables
 total_ground_truth &lt;- list()
 total_tesseract &lt;- list()
 total_mismatch &lt;- list()
@@ -409,14 +411,18 @@ len_check2 = rep(NA, 100)
 
 file_name &lt;- list.files(&quot;../data/ground_truth&quot;)
 
+# trimming files
 for (i in 1:length(file_name)){
  original_file &lt;- sub(&quot;.txt&quot;,&quot;&quot;,file_name[i])
+ ## read the ground truth text
  original_ground_truth &lt;- readLines(paste(&quot;../data/ground_truth/&quot;,original_file,&quot;.txt&quot;,sep=&quot;&quot;), warn=FALSE)
+ ## read the tesseract text
  original_tesseract &lt;- readLines(paste(&quot;../data/tesseract/&quot;,original_file,&quot;.txt&quot;,sep=&quot;&quot;), warn=FALSE)
  len_check[i] = length(original_ground_truth) == length(original_tesseract)
  len_check2[i] = length(original_ground_truth) &gt;= length(original_tesseract)
 }
 
+#check which file length is not matching 
 which(!len_check) </code></pre>
 <pre><code>##  [1]   3  10  22  23  34  41  61  63  68  70  72  80 100</code></pre>
 <pre class="r"><code>which(!len_check2)</code></pre>
@@ -430,13 +436,13 @@ which(!len_check) </code></pre>
   ## read the tesseract text
   current_tesseract &lt;- readLines(paste(&quot;../data/tesseract/&quot;,current_file,&quot;.txt&quot;,sep=&quot;&quot;), warn=FALSE)
   
-  ## Remove punctuations &amp; remove leading and trailing zeros
+  ## Trim punctuations and zeros
   current_ground_truth &lt;- gsub('[[:punct:]]+','',current_ground_truth)
   current_ground_truth &lt;- trimws(current_ground_truth, which = &quot;both&quot;)
   current_tesseract &lt;- gsub('[[:punct:]]+','',current_tesseract)
   current_tesseract &lt;- trimws(current_tesseract, which = &quot;both&quot;)
   
-  ## Record mismatching lines
+  ## Find mismatching lines
   mismatch_info &lt;- finding_mismatch(tess = current_tesseract, grdth = current_ground_truth)
   
   ## Save into List
@@ -444,24 +450,22 @@ which(!len_check) </code></pre>
   total_ground_truth[[k]] &lt;- current_ground_truth
   total_mismatch[[k]] &lt;- mismatch_info
 }</code></pre>
-<pre class="r"><code>  ################################################
-  ### Please note that we figured there are exactly 13 text files whose total number of lines do not match 
-  ### between their corresponding ground_truth and tesseract files. Therefore, we manually trimmed the
-  ### lines of those ground_truth files
-  ################################################
+<pre class="r"><code>#There are thirteen text files in which the total number of lines do not match ###
+#between their corresponding ground_truth and tesseract files. So we manually trimmed the lines in the ground_truth files                  
   
-  ## Check if there are any mismatches in terms of article's total number of rows
+  ## Check mismatches in terms of article's total number of rows
   for (k in 1:length(ground_filename)){
     total_mismatch_100[k,1] &lt;- length(total_tesseract[[k]])
     total_mismatch_100[k,2] &lt;- length(total_ground_truth[[k]])
   }
-  ## It turns out all articles match now
+  ## Ensuring that all files match now
   sum(total_mismatch_100[,1]==total_mismatch_100[,2]) == 100
-  ## Code to locate the index of the corresponding ground truth text
+  
+  ## Locating index of ground truth text
   ## 1. if the number of words in corresponding row (between tesseract and ground_truth) are equal,
-  ## then locate the ground truth word by indexing directly
+  ## locate the ground truth word by indexing directly
   ## 2. if the number of words in corresponding row are not equal, extract previous and following 2 
-  ## words of the error word (total of 5 index), and apply string-distance function (stringdist) 
+  ## words of the error word (5 index in total), and apply string-distance function (stringdist) 
   ## to locate the most likely ground truth word.
   
   for (k in 1:length(ground_filename)){
@@ -477,15 +481,15 @@ which(!len_check) </code></pre>
 
 #save(total_tesseract, file=&quot;../output/total_tesseract.RData&quot;)
 #save(total_ground_truth, file=&quot;../output/total_ground_truth.RData&quot;)
-#save(final_detect_output, file=&quot;../output/final_detect_output.RData&quot;)
+#save(, file=&quot;../output/final_detect_output.RData&quot;)
 #save(final_tesseract_clean_output, file=&quot;../output/final_tesseract_clean_output.RData&quot;)</code></pre>
 </div>
 <div id="step-4---error-correction" class="section level1">
 <h1><span class="header-section-number">4</span> Step 4 - Error correction</h1>
 <p>Given the detected word error, in order to find the best correction, we need to generating the candidate corrections: a dictionary or a database of legal n-grams to locate one or more potential correction terms. Then we need invoke some lexical-similarity measure between the misspelled string and the candidates or a probabilistic estimate of the likelihood of the correction to rank order the candidates.</p>
 <p>The referenced paper is: C3 <a href="https://link.springer.com/content/pdf/10.1007%2FBF01889984.pdf">Probability scoring without context</a></p>
-<div id="train-test-split" class="section level2">
-<h2><span class="header-section-number">4.1</span> 4.1 train test split</h2>
+<div id="step-4.1---train-test-split" class="section level2">
+<h2><span class="header-section-number">4.1</span> Step 4.1 - train test split</h2>
 <pre class="r"><code>readfile &lt;- function(file_name){
   readLines(paste(&quot;../data/ground_truth/&quot;,file_name,sep=&quot;&quot;), warn=FALSE)
 }
@@ -494,18 +498,20 @@ which(!len_check) </code></pre>
 ground_truth_text &lt;- lapply(file_name_vec, readfile)
 
 set.seed(0)
-#sample the training set consists of 80 files weighted by group
+
+#sample the training set. Eighty files weighted by group
 df &lt;- data.frame(file_index = 1:100, group = c(rep(1, 10), rep(2, 28), rep(3, 3), rep(4, 27), rep(5, 32)))
 sample &lt;- sample_n(df, size = 80, weight = group, replace = F)
+
 #index of trainning set
 train_index &lt;- sort(sample$file_index)
 
-#select train ground truth
+#select train_ground_truth
 train_truth_text &lt;- unlist(ground_truth_text[train_index])
 train_truth_text_vec &lt;- unlist(str_split(train_truth_text, &quot; &quot;))</code></pre>
 </div>
-<div id="choose-candiates" class="section level2">
-<h2><span class="header-section-number">4.2</span> 4.2 Choose candiates</h2>
+<div id="step-4.2---choose-candiates" class="section level2">
+<h2><span class="header-section-number">4.2</span> Step 4.2 - Choose candiates</h2>
 <pre class="r"><code>source('../lib/candidate.R')
 source('../lib/prior.R')
 source('../lib/channel_prob.R')
@@ -514,13 +520,14 @@ source('../lib/perform_correction.R')</code></pre>
 <pre class="r"><code># create a dictionary containing all legal words
 candidate_dict&lt;- unique(tolower(english.words))
 
-# show candidates chosen for the typo: &quot;acress&quot; 
+# show candidates the chosen word for the typo: &quot;acress&quot; 
 acress_candidate &lt;- choose_candidate(&quot;acress&quot;)
-acress_candidate</code></pre>
-<pre><code>## [1] &quot;access&quot;  &quot;acres&quot;   &quot;across&quot;  &quot;actress&quot; &quot;caress&quot;  &quot;cress&quot;</code></pre>
+sapply(acress_candidate, type_of_typo, &quot;acress&quot;)</code></pre>
+<pre><code>##  access   acres  across actress  caress   cress 
+##   &quot;SUB&quot;   &quot;DEL&quot;   &quot;SUB&quot;   &quot;INS&quot;   &quot;REV&quot;   &quot;DEL&quot;</code></pre>
 </div>
-<div id="test-the-functions-built-for-probability-scoring" class="section level2">
-<h2><span class="header-section-number">4.3</span> 4.3 Test the functions built for probability scoring</h2>
+<div id="step-4.3---test-the-functions-built-for-probability-scoring" class="section level2">
+<h2><span class="header-section-number">4.3</span> Step 4.3 - Test the functions built for probability scoring</h2>
 <p>The probability scoring <span class="math inline">\(score = Pr(c) Pr(typo|cor)\)</span></p>
 <ul>
 <li><p>Prior probability <span class="math inline">\(Pr(c)\)</span>:</p>
@@ -534,8 +541,8 @@ acress_candidate</code></pre>
 </ol></li>
 </ul></li>
 </ul>
-<div id="prior-probability" class="section level3">
-<h3><span class="header-section-number">4.3.1</span> 4.3.1 prior probability</h3>
+<div id="step-4.3.1---prior-probability" class="section level3">
+<h3><span class="header-section-number">4.3.1</span> Step 4.3.1 - Prior probability</h3>
 <pre class="r"><code>priors &lt;- prior_prob(train_truth_text_vec)
 priors_mle &lt;- prior_prob(train_truth_text, method = &quot;mle&quot;)
 
@@ -553,8 +560,8 @@ sort(unlist(priors[acress_candidate]))</code></pre>
 ## 8.965765e-07</code></pre>
 <p>We choose to use ELE method, since MLE is poor when observed frequency of a certain word is 0.</p>
 </div>
-<div id="channel-probability" class="section level3">
-<h3><span class="header-section-number">4.3.2</span> 4.3.2 channel probability</h3>
+<div id="step-4.3.2---channel-probability" class="section level3">
+<h3><span class="header-section-number">4.3.2</span> Step 4.3.2 - Channel probability</h3>
 <ul>
 <li><p>Channel probability <span class="math inline">\(Pr(typo|cor)\)</span>:</p>
 <ul>
@@ -599,13 +606,13 @@ sapply(acress_candidate, channel_prob, &quot;acress&quot;)</code></pre>
 ## 0.000000000 0.002666581 0.306930693 0.008226691 0.000000000 0.001354814</code></pre>
 </div>
 </div>
-<div id="performing-corrections-on-test-files" class="section level2">
-<h2><span class="header-section-number">4.4</span> 4.4 Performing corrections on test files</h2>
-<pre class="r"><code>load(&quot;../output/total_tesseract.RData&quot;)
+<div id="step-4.4---performing-corrections-on-test-files" class="section level2">
+<h2><span class="header-section-number">4.4</span> Step 4.4 - Performing corrections on test files</h2>
+<pre class="r"><code>#load data
+load(&quot;../output/total_tesseract.RData&quot;)
 load(&quot;../output/total_ground_truth.RData&quot;)
 load(&quot;../output/final_detect_output.RData&quot;)
 load(&quot;../output/final_tesseract_clean_output.RData&quot;)
-
 
 #clean words in test group
 test_group_clean &lt;- final_tesseract_clean_output[-train_index]
@@ -619,17 +626,22 @@ for (i in 1:length(test_group)) {
 
 # perform correction on typo words
 corrected_list &lt;- rep(list(c()),20)
+typo_type_list &lt;- rep(list(c()),20)
 for(i in 1:20) {
     current_file &lt;- tolower(typo_list[[i]])
     correction &lt;- c()
+    typo_type &lt;- c()
     for (j in current_file){
       if (grepl(&quot;[[:digit:]]&quot;,j) | grepl(&quot;^[a-zA-Z]$&quot;, j) | grepl(&quot;ﬂu&quot;, j)){
         correction &lt;- c(correction, j)
+        typo_type &lt;- c(typo_type, NA)
       }
       else{
-        correction &lt;- c(correction, perform_correction(j))
+        correction &lt;- c(correction, perform_correction(j)$correction)
+        typo_type &lt;- c(typo_type, perform_correction(j)$type)
       }
       corrected_list[[i]] = correction
+      typo_type_list[[i]] = typo_type
      }
 }
 
@@ -638,7 +650,19 @@ for(i in 1:20) {
 combine_list &lt;- rep(list(c()), 20)
 for(i in 1:20){
   combine_list[[i]] &lt;- tolower(c(test_group_clean[[i]], corrected_list[[i]]))
-}</code></pre>
+}
+
+#show some result
+df &lt;- data.frame(typo = test_group[[20]]$tesseract_err, typo_type = typo_type_list[[20]], correction = corrected_list[[20]], ground_truth = test_group[[20]]$ground_truth_err) %&gt;% filter(typo_type %in% c(&quot;DEL&quot;,&quot;INS&quot;,&quot;SUB&quot;,&quot;REV&quot;))
+head(df)</code></pre>
+<pre><code>##         typo typo_type correction ground_truth
+## 1 membershlp       SUB membership   membership
+## 2     endlng       SUB     ending       ending
+## 3  resultlng       SUB  resulting    resulting
+## 4     sllght       SUB     slight       slight
+## 5 membershlp       SUB membership   membership
+## 6  Commlttee       SUB  committee    Committee</code></pre>
+<p>We find that most of the typos in OCR are substitution, the most common case is that scanning “i” as “l”.</p>
 </div>
 </div>
 <div id="step-5---performance-measure" class="section level1">
@@ -651,9 +675,11 @@ The two most common OCR accuracy measures are precision and recall. Both are rel
 <p>where <em>items</em> refer to either characters or words, and ground truth is the original text stored in the plain text file.</p>
 <p>Both <em>precision</em> and <em>recall</em> are mathematically convenient measures because their numeric values are some decimal fractions in the range between 0.0 and 1.0, and thus can be written as percentages. For instance, recall is the percentage of words in the original text correctly found by the OCR engine, whereas precision is the percentage of correctly found words with respect to the total word count of the OCR output. Note that in the OCR-related literature, the term OCR accuracy often refers to recall.</p>
 <div id="perform-evaluation" class="section level2">
-<h2><span class="header-section-number">5.1</span> 5.1 Perform Evaluation</h2>
+<h2><span class="header-section-number">5.1</span> 5.1 - Perform Evaluation</h2>
+<p>Finally, we evaluate the performance the algorithms by comparing the word-level and character-level precision and recall. For the number of correct items in the precision and recall functions. We used the following method to calculate: we combine the cleaned words and the corrected words and took the intersection with the ground truth. For character-wise: We split the OCR, corrected list and ground truth into characters, and calculated the intersection between the characters in corrected list and those in ground truth.</p>
 <pre class="r"><code>#ground truth txt file without punctutations in the test group
 ground_truth_test &lt;- total_ground_truth[-train_index]
+
 #tesseract file without punctutations in the test group
 OCR_test &lt;- total_tesseract[-train_index]
 
@@ -661,7 +687,7 @@ OCR_test &lt;- total_tesseract[-train_index]
 ground_truth_test_vec &lt;- lapply(ground_truth_test, function(x){tolower(unlist(str_split(x, &quot; &quot;)))})
 OCR_test_vec &lt;- lapply(OCR_test, function(x){tolower(unlist(str_split(x, &quot; &quot;)))})</code></pre>
 <div id="wordwise-evaluation" class="section level3">
-<h3><span class="header-section-number">5.1.1</span> wordwise evaluation</h3>
+<h3><span class="header-section-number">5.1.1</span> Wordwise evaluation</h3>
 <pre class="r"><code>weights_recall &lt;- lengths(ground_truth_test_vec)/sum(lengths(ground_truth_test_vec))
 weights_prec &lt;- lengths(OCR_test_vec)/sum(lengths(OCR_test_vec))
 #wordwise tesseract recall
@@ -679,7 +705,6 @@ tes_precsion[i] &lt;- (length(vecsets::vintersect(ground_truth_test_vec[[i]], OC
 }
 
 tes_precsion &lt;- sum(tes_precsion)
-
 
 
 #wordwise recall ele
@@ -702,7 +727,7 @@ eleprecision[i] &lt;- (length(vecsets::vintersect(ground_truth_test_vec[[i]], co
 eleprecision &lt;- sum(eleprecision)</code></pre>
 </div>
 <div id="character-level-evaluation" class="section level3">
-<h3><span class="header-section-number">5.1.2</span> character level evaluation</h3>
+<h3><span class="header-section-number">5.1.2</span> Character level evaluation</h3>
 <pre class="r"><code># character recall for tesseract
 tes_char &lt;- unlist(str_split(unlist(OCR_test_vec), &quot;&quot;))
 ground_char &lt;- unlist(str_split(unlist(ground_truth_test_vec), &quot;&quot;))
@@ -723,7 +748,11 @@ ele_prec_char &lt;- length(vecsets::vintersect(correction_char, ground_char))/ l
 </div>
 </div>
 <div id="evaluation-output" class="section level2">
-<h2><span class="header-section-number">5.2</span> 5.2 Evaluation output</h2>
+<h2><span class="header-section-number">5.2</span> 5.2 - Evaluation output</h2>
+<ul>
+<li><p>Word level: The precision and recall of the original Tessearct OCR outputs are 61.51105% and 0.6042648%. With post-processing, both precision and recall increased around 3%. Adopting the idea of garbage detection and probability scoring without contextual constraints can somewhat improve the Tesseract OCR output in terms of correcting words.</p></li>
+<li><p>Character level: All lowercase and uppercase letters are considered. The original Tessearct OCR outputs has precision 90.39345% and recall 91.90134%. After post-processing, the results are quite similar to the original ones, with the precision score and the recall both increasing around 0.08%.</p></li>
+</ul>
 <pre class="r"><code>OCR_performance_table &lt;- data.frame(&quot;Tesseract&quot; = rep(NA,4),
                                     &quot;Tesseract_with_postprocessing&quot; = rep(NA,4))
 row.names(OCR_performance_table) &lt;- c(&quot;word_wise_recall&quot;,&quot;word_wise_precision&quot;,
@@ -751,25 +780,51 @@ kable(OCR_performance_table, caption=&quot;Summary of OCR performance&quot;)</co
 <tr class="odd">
 <td>word_wise_recall</td>
 <td align="right">0.6151105</td>
-<td align="right">0.6435382</td>
+<td align="right">0.6432445</td>
 </tr>
 <tr class="even">
 <td>word_wise_precision</td>
 <td align="right">0.6042648</td>
-<td align="right">0.6318238</td>
+<td align="right">0.6315354</td>
 </tr>
 <tr class="odd">
 <td>character_wise_recall</td>
 <td align="right">0.9039345</td>
-<td align="right">0.9048772</td>
+<td align="right">0.9047996</td>
 </tr>
 <tr class="even">
 <td>character_wise_precision</td>
 <td align="right">0.9190134</td>
-<td align="right">0.9199719</td>
+<td align="right">0.9198930</td>
 </tr>
 </tbody>
 </table>
+</div>
+<div id="reflection" class="section level2">
+<h2><span class="header-section-number">5.3</span> 5.3 Reflection</h2>
+<pre class="r"><code>for (i in 1:20){
+df &lt;- rbind(df, data.frame(typo = test_group[[20]]$tesseract_err, typo_type = typo_type_list[[20]], correction = corrected_list[[20]], ground_truth = test_group[[20]]$ground_truth_err) %&gt;% filter(typo_type %in% c(&quot;DEL&quot;,&quot;INS&quot;,&quot;SUB&quot;,&quot;REV&quot;)))
+}
+
+
+df$success = ifelse(as.vector(df$correction) == as.vector(df$ground_truth), 1, 0)
+df%&gt;% group_by(typo_type) %&gt;% summarise(total_count = n())</code></pre>
+<pre><code>## # A tibble: 2 x 2
+##   typo_type total_count
+##   &lt;fct&gt;           &lt;int&gt;
+## 1 DEL                42
+## 2 SUB              2352</code></pre>
+<pre class="r"><code>df%&gt;% group_by(typo_type) %&gt;% summarise(success_rate = mean(success))</code></pre>
+<pre><code>## # A tibble: 2 x 2
+##   typo_type success_rate
+##   &lt;fct&gt;            &lt;dbl&gt;
+## 1 DEL              0    
+## 2 SUB              0.714</code></pre>
+<p>We find that probability scoring method in paper C3 mainly deals with spelling error, however OCR leads to scanning error. Those two types of errors are internally different. This is the reason why most of our corrections are substitue a charactor with another. The accuracy of substitution is 98%.</p>
+</div>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
 <ol style="list-style-type: decimal">
 <li>Karpinski, R., Lohani, D., &amp; Belaïd, A. <em>Metrics for Complete Evaluation of OCR Performance</em>. <a href="https://csce.ucmss.com/cr/books/2018/LFS/CSREA2018/IPC3481.pdf">pdf</a></li>
 </ol>
@@ -788,13 +843,9 @@ kable(OCR_performance_table, caption=&quot;Summary of OCR performance&quot;)</co
 <ul>
 <li>section 3.2, consider the text alignment</li>
 </ul>
-</div>
-</div>
-<div id="references" class="section level1 unnumbered">
-<h1>References</h1>
-<ol style="list-style-type: decimal">
+<ol start="4" style="list-style-type: decimal">
 <li><p>Borovikov, E. (2014). <em>A survey of modern optical character recognition techniques</em>. arXiv preprint arXiv:1412.4183.<a href="https://pdfs.semanticscholar.org/79c9/cc90b8c2e2c9c54c3862935ea00df7dd56ed.pdf">pdf</a> (This paper is the source of our evaluation criterion)</p></li>
-<li><p>Kukich, K. (1992). <em>Techniques for automatically correcting words in text</em>. Acm Computing Surveys (CSUR), 24(4), 377-439. <a href="http://www.unige.ch/eti/ptt/docs/kukich-92.pdf">pdf</a> (This paper is the benchmark review paper)</p></li>
+<li><p>Kukich, K. (1992). <em>Techniques for automatically correcting words in text</em>. Acm Computing Surveys (CSUR), 24(4), 377-439. <a href="http://www.unige.ch/eti/ptt/docs/kukich-92.pdf">pdf</a> (This paper is the benchmark review paper).</p></li>
 </ol>
 </div>
 
