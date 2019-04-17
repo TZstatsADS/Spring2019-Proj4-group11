@@ -1,8 +1,4 @@
-
-#####################################################################################
-#### this R file includes all the scoring functions which implemented in C2 Paper ###
-#####################################################################################
-
+# Note: this R file includes all the scoring functions which implemented in the correction Paper
 
 
 # Levenshtein edit distance
@@ -11,10 +7,6 @@ LED_score <- function(w_c){
   return(1 - (stringdist::stringdist(w_c,w_e)/(1+stringdist::stringdist(w_e,total_candidate[[w_e]][length(total_candidate[[w_e]])]))))
 }
 
-
-# String similarity
-## One issue we found for this calculation is that there's a discrepancy between this C2 paper and the original paper "Islam and Inkpen, 2009a"
-## C2 paper has "squared" on the numerator for each scoring calculation, while the original paper does not
 
 SS_score <- function(w_c){
   
@@ -69,8 +61,7 @@ SS_score <- function(w_c){
     return(2*(len^2)/(nchar(w_c)+nchar(w_e)))
   }
   
-  # The reason we picked 1/4 for each coefficient is that the originial paper "Islam Inkpen, 2009a" used 1/4.
-  # But from a more technical perspective, we should do cross validation and confirm 1/4 is truly the most optimal value.
+
   
   return(NLS_score()/4+NM1_score()/4+NMn_score()/4+NMz_score()/4)
 }

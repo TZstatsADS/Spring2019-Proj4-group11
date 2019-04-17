@@ -1,8 +1,6 @@
 finding_mismatch <- function(tess = current_tesseract_txt, grdth = current_ground_truth_txt){
   
-  #################################################################################################
-  #### this function is to locate the row index of those lines with mismatching number of words ###
-  #################################################################################################
+# This function is to locate the row index of those lines with mismatching number of words
   
   tess_num <- sapply(strsplit(tess, " "), length)
   grdth_num <- sapply(strsplit(grdth, " "), length)
